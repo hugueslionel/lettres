@@ -557,24 +557,23 @@
         }
 
         // Lancement des jeux
-        function startGame(gameType) {
-            if (!currentStudent) {
-                alert('Erreur : aucun élève connecté');
-                return;
-            }
-            
-            if (gameSettings.writings.length === 0) {
-                alert('Veuillez sélectionner au moins une écriture !');
-                return;
-            }
-            
-            // Ici on lancera le jeu spécifique
-            alert(`Lancement du jeu : ${gameType}\nÉcritures : ${gameSettings.writings.join(', ')}\nLettres : ${gameSettings.letters}\nÉlève : ${currentStudent.nom}`);
-            
-            // Mettre à jour les statistiques
-            updateStudentStats(gameType);
+       function startGame(gameType) {
+            // Sauvegarder l'élève actuel et les paramètres
+            sessionStorage.setItem('currentStudent', JSON.stringify(currentStudent));
+            sessionStorage.setItem('gameSettings', JSON.stringify(gameSettings));
+    
+            // Rediriger vers le bon jeu
+            const gameUrls = {
+                'memory': 'exercice1.html',
+                'quiz': 'exercice2.html',
+                'disorder': 'exercice3.html',
+                'sounds': 'exercice4.html',
+                'sorting': 'exercice5.html',
+                'train': 'exercice6.html'
+            };
+    
+            window.location.href = gameUrls[gameType];
         }
-
         function updateStudentStats(gameType) {
             if (!currentStudent) return;
             
