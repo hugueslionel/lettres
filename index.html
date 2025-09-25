@@ -335,21 +335,6 @@
         <!-- Paramètres rapides -->
         <div id="quickSettings" class="quick-settings hidden">
             <div class="setting-group">
-                <label>📝 Écritures à travailler :</label>
-                <div class="checkbox-group">
-                    <div class="checkbox-item" onclick="toggleSetting(this, 'majuscule')">
-                        <input type="checkbox" checked> Majuscules
-                    </div>
-                    <div class="checkbox-item" onclick="toggleSetting(this, 'script')">
-                        <input type="checkbox" checked> Script
-                    </div>
-                    <div class="checkbox-item" onclick="toggleSetting(this, 'cursive')">
-                        <input type="checkbox" checked> Cursives
-                    </div>
-                </div>
-            </div>
-
-            <div class="setting-group">
                 <label>🔤 Lettres à travailler :</label>
                 <div class="checkbox-group">
                     <div class="checkbox-item" onclick="toggleLetterGroup(this, 'all')">
@@ -455,15 +440,19 @@
         function toggleNewStudent() {
             const input = document.getElementById('newStudentInput');
             const select = document.getElementById('studentSelect');
+            const btn = event.target; // Le bouton qui a été cliqué
             
             if (input.style.display === 'none') {
                 input.style.display = 'block';
                 input.focus();
                 select.style.display = 'none';
+                btn.textContent = 'Annuler';
             } else {
                 input.style.display = 'none';
                 select.style.display = 'block';
                 input.value = '';
+                btn.textContent = 'Nouveau prénom';
+                select.selectedIndex = 0; // Remettre sur "Choisir un prénom"
             }
         }
 
@@ -492,6 +481,11 @@
             
             localStorage.setItem('alphabet_students', JSON.stringify(students));
             currentStudent = students[studentName];
+            
+            // Remettre l'interface en état normal après connexion
+            input.style.display = 'none';
+            select.style.display = 'block';
+            input.value = '';
             
             showMainMenu();
         }
@@ -544,7 +538,7 @@
             const checkbox = element.querySelector('input[type="checkbox"]');
             
             // Décocher tous les autres groupes
-            document.querySelectorAll('.checkbox-group:last-child .checkbox-item').forEach(item => {
+            document.querySelectorAll('#quickSettings .checkbox-group .checkbox-item').forEach(item => {
                 const cb = item.querySelector('input[type="checkbox"]');
                 cb.checked = false;
                 item.classList.remove('checked');
@@ -563,10 +557,7 @@
                 return;
             }
             
-            if (gameSettings.writings.length === 0) {
-                alert('Veuillez sélectionner au moins une écriture !');
-                return;
-            }
+            // Supprimer la vérification des écritures puisqu'on a supprimé cette section
             
             // Sauvegarder l'élève actuel et les paramètres dans sessionStorage
             sessionStorage.setItem('currentStudent', JSON.stringify(currentStudent));
