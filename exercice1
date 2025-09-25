@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory des Lettres</title>
+    <style>
+        @font-face {
+            font-family: 'BelleAllureGS';
+            src: url('fonts/BelleAllureGS-Gros.otf') format('opentype');
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'ScriptEcole2';
+            src: url('fonts/ScriptEcole2.ttf') format('truetype');
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            min-height: 100vh;
+            color: #2d3436;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .game-title h1 {
+            font-size: 2em;
+            color: #2d3436;
+        }
+
+        .game-info {
+            text-align: right;
+            font-size: 1.1em;
+        }
+
+        .score {
+            color: #00b894;
+            font-weight: bold;
+        }
+
+        .timer {
+            color: #e17055;
+            font-weight: bold;
+        }
+
+        /* Sélection du niveau */
+        .level-selector {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .level-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .level-btn {
+            background: #74b9ff;
+            color: white;
+            border: none;
+            padding: 20px 30px;
+            font-size: 1.2em;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .level-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(116, 185, 255, 0.4);
+        }
+
+        .level-btn.easy { background: #00b894; }
+        .level-btn.medium { background: #fdcb6e; color: #2d3436; }
+        .level-btn.hard { background: #e17055; }
+
+        /* Plateau de jeu */
+        .game-board {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .cards-grid {
+            display: grid;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        /* Grilles selon le nombre de cartes */
+        .grid-18 { grid-template-columns: repeat(6, 1fr); max-width: 600px; margin: 0 auto; }
+        .grid-32 { grid-template-columns: repeat(8, 1fr); max-width: 800px; margin: 0 auto; }
+        .grid-40 { grid-template-columns: repeat(8, 1fr); max-width: 800px; margin: 0 auto; }
+
+        .memory-card {
+            aspect-ratio: 1;
+            background: #74b9ff;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            color: white;
+            transition: all 0.3s ease;
+            user-select: none;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transform-style: preserve-3d;
+            min-width: 60px;
+            min-height: 60px;
+        }
+
+        .memory-card:hover:not(.flipped):not(.matched) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .memory-card.flipped {
+            background: white;
+            color: #2d3436;
+            transform: rotateY(180deg);
+        }
+
+        .memory-card.matched {
+            background: #00b894;
+            color: white;
+            cursor: default;
+            animation: matchSuccess 0.6s ease-in-out;
+        }
+
+        .memory-card.wrong {
+            background: #e17055;
+            animation: wrongMatch 0.5s ease-in-out;
+        }
+
+        @keyframes matchSuccess {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes wrongMatch {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(0.95); }
+            75% { transform: scale(1.05); }
+        }
+
+        /* Styles des lettres selon l'écriture */
+        .letter-majuscule {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            font-weight: bold;
+        }
+
+        .letter-script {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            text-transform: lowercase;
+        }
+
+        .letter-cursive {
+            font-family: 'BelleAllureGS', cursive;
+            text-transform: lowercase;
+        }
+
+        /* Contrôles du jeu */
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .btn-secondary {
+            background: #74b9ff;
+        }
+
+        .btn-danger {
+            background: #e17055;
+        }
+
+        /* Écran de fin */
+        .game-over {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .victory-animation {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .stats {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .stats h3 {
+            color: #2d3436;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .level-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .level-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .memory-card {
+                font-size: 2em;
+            }
+
+            .grid-18 { grid-template-columns: repeat(3, 1fr); }
+            .grid-32 { grid-template-columns: repeat(4, 1fr); }
+            .grid-40 { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        @media (max-width: 480px) {
+            .memory-card {
+                font-size: 1.5em;
+                min-width: 50px;
+                min-height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <div class="header">
+            <div class="game-title">
+                <span>🃏</span>
+                <h1>Memory des Lettres</h1>
+            </div>
+            <div class="game-info">
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="timer">Temps: <span id="timer">00:00</span></div>
+            </div>
+        </div>
+
+        <!-- Sélecteur de niveau -->
+        <div id="levelSelector" class="level-selector">
+            <h2>🎯 Choisis ton niveau de difficulté</h2>
+            <div class="level-buttons">
+                <button class="level-btn easy" onclick="startLevel(1)">
+                    <div>🟢 Niveau 1 - Facile</div>
+                    <small>Majuscules ↔ Script<br>9 lettres (18 cartes)</small>
+                </button>
+                <button class="level-btn medium" onclick="startLevel(2)">
+                    <div>🟡 Niveau 2 - Moyen</div>
+                    <small>Majuscules ↔ Script<br>16 lettres (32 cartes)</small>
+                </button>
+                <button class="level-btn hard" onclick="startLevel(3)">
+                    <div>🔴 Niveau 3 - Difficile</div>
+                    <small>Script ↔ Cursives<br>20 lettres (40 cartes)</small>
+                </button>
+            </div>
+        </div>
+
+        <!-- Plateau de jeu -->
+        <div id="gameBoard" class="game-board">
+            <div id="cardsGrid" class="cards-grid"></div>
+            <div class="game-controls">
+                <button class="btn" onclick="restartGame()">🔄 Recommencer</button>
+                <button class="btn btn-secondary" onclick="backToLevels()">📋 Changer de niveau</button>
+                <button class="btn btn-danger" onclick="goHome()">🏠 Menu principal</button>
+            </div>
+        </div>
+
+        <!-- Écran de fin -->
+        <div id="gameOver" class="game-over">
+            <div class="victory-animation">🎉</div>
+            <h2>Félicitations !</h2>
+            <p>Tu as terminé le Memory des lettres !</p>
+            
+            <div class="stats">
+                <h3>📊 Tes résultats</h3>
+                <div class="stat-item">
+                    <span>Temps total:</span>
+                    <span id="finalTime">00:00</span>
+                </div>
+                <div class="stat-item">
+                    <span>Nombre de tentatives:</span>
+                    <span id="finalAttempts">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Paires trouvées:</span>
+                    <span id="finalPairs">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Score final:</span>
+                    <span id="finalScore">0</span>
+                </div>
+            </div>
+
+            <div class="game-controls">
+                <button class="btn" onclick="restartGame()">🔄 Rejouer</button>
+                <button class="btn btn-secondary" onclick="backToLevels()">📋 Autres niveaux</button>
+                <button class="btn btn-danger" onclick="goHome()">🏠 Menu principal</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration des niveaux
+        const LEVELS = {
+            1: {
+                name: "Facile",
+                letters: ['a', 'b', 'd', 'e', 'f', 'i', 'l', 'm', 'n'],
+                writings: ['majuscule', 'script'],
+                gridClass: 'grid-18'
+            },
+            2: {
+                name: "Moyen", 
+                letters: ['a', 'b', 'd', 'p', 'q', 'f', 'g', 'h', 'i', 'j', 'l', 'm', 'n', 'r', 't', 'u', 'v'],
+                writings: ['majuscule', 'script'],
+                gridClass: 'grid-32'
+            },
+            3: {
+                name: "Difficile",
+                letters: ['a', 'b', 'd', 'e', 'f', 'g', 'i', 'j', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'v'],
+                writings: ['script', 'cursive'],
+                gridClass: 'grid-40'
+            }
+        };
+
+        // Variables du jeu
+        let currentLevel = null;
+        let gameCards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let attempts = 0;
+        let score = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let isProcessing = false;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            showLevelSelector();
+        });
+
+        function showLevelSelector() {
+            document.getElementById('levelSelector').style.display = 'block';
+            document.getElementById('gameBoard').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            resetGame();
+        }
+
+        function startLevel(level) {
+            currentLevel = LEVELS[level];
+            if (!currentLevel) return;
+
+            createGameCards();
+            setupGameBoard();
+            startTimer();
+            
+            document.getElementById('levelSelector').style.display = 'none';
+            document.getElementById('gameBoard').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function createGameCards() {
+            gameCards = [];
+            const letters = currentLevel.letters;
+            const writings = currentLevel.writings;
+            
+            // Créer les paires de cartes
+            letters.forEach((letter, index) => {
+                // Première carte (première écriture)
+                gameCards.push({
+                    id: `${letter}-${writings[0]}`,
+                    letter: letter,
+                    writing: writings[0],
+                    pairId: index
+                });
+                
+                // Deuxième carte (deuxième écriture)
+                gameCards.push({
+                    id: `${letter}-${writings[1]}`,
+                    letter: letter,
+                    writing: writings[1],
+                    pairId: index
+                });
+            });
+            
+            // Mélanger les cartes
+            shuffleArray(gameCards);
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function setupGameBoard() {
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = '';
+            grid.className = `cards-grid ${currentLevel.gridClass}`;
+            
+            gameCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'memory-card';
+                cardElement.dataset.cardId = card.id;
+                cardElement.dataset.pairId = card.pairId;
+                cardElement.innerHTML = '?';
+                cardElement.addEventListener('click', () => flipCard(cardElement, card));
+                grid.appendChild(cardElement);
+            });
+        }
+
+        function flipCard(cardElement, card) {
+            if (isProcessing || cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) {
+                return;
+            }
+
+            // Retourner la carte
+            cardElement.classList.add('flipped');
+            cardElement.innerHTML = `<span class="letter-${card.writing}">${getDisplayLetter(card.letter, card.writing)}</span>`;
+            flippedCards.push({element: cardElement, card: card});
+
+            // Vérifier si on a 2 cartes retournées
+            if (flippedCards.length === 2) {
+                isProcessing = true;
+                attempts++;
+                checkMatch();
+            }
+        }
+
+        function getDisplayLetter(letter, writing) {
+            switch(writing) {
+                case 'majuscule':
+                    return letter.toUpperCase();
+                case 'script':
+                    return letter.toLowerCase();
+                case 'cursive':
+                    return letter.toLowerCase();
+                default:
+                    return letter;
+            }
+        }
+
+        function checkMatch() {
+            const [first, second] = flippedCards;
+            
+            setTimeout(() => {
+                if (first.card.pairId === second.card.pairId) {
+                    // Match !
+                    first.element.classList.add('matched');
+                    second.element.classList.add('matched');
+                    matchedPairs++;
+                    score += 10;
+                    updateScore();
+                    
+                    // Vérifier si le jeu est terminé
+                    if (matchedPairs === currentLevel.letters.length) {
+                        setTimeout(() => endGame(), 500);
+                    }
+                } else {
+                    // Pas de match
+                    first.element.classList.add('wrong');
+                    second.element.classList.add('wrong');
+                    
+                    setTimeout(() => {
+                        first.element.classList.remove('flipped', 'wrong');
+                        second.element.classList.remove('flipped', 'wrong');
+                        first.element.innerHTML = '?';
+                        second.element.innerHTML = '?';
+                    }, 800);
+                }
+                
+                flippedCards = [];
+                isProcessing = false;
+            }, 1000);
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Calculer le score bonus basé sur le temps
+            const timeBonus = Math.max(0, 300 - elapsed); // Bonus si moins de 5 minutes
+            score += timeBonus;
+            
+            // Afficher les résultats
+            document.getElementById('finalTime').textContent = timeStr;
+            document.getElementById('finalAttempts').textContent = attempts;
+            document.getElementById('finalPairs').textContent = matchedPairs;
+            document.getElementById('finalScore').textContent = score;
+            
+            // Sauvegarder les statistiques
+            saveGameStats(elapsed, attempts, score);
+            
+            document.getElementById('gameBoard').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function saveGameStats(timeElapsed, totalAttempts, finalScore) {
+            // Récupérer les données de l'élève actuel
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                const student = students[currentStudentName];
+                
+                // Mettre à jour les statistiques générales
+                student.statistiques.tempsTotal += timeElapsed;
+                student.statistiques.sessionsJouees++;
+                student.statistiques.lettresTravaillees = [
+                    ...new Set([...student.statistiques.lettresTravaillees, ...currentLevel.letters])
+                ];
+                
+                // Mettre à jour les résultats du memory
+                if (!student.resultatsParJeu.memory) {
+                    student.resultatsParJeu.memory = {
+                        partiesJouees: 0,
+                        meilleurScore: 0,
+                        tempsTotal: 0,
+                        moyenneTentatives: 0
+                    };
+                }
+                
+                const memoryStats = student.resultatsParJeu.memory;
+                memoryStats.partiesJouees++;
+                memoryStats.meilleurScore = Math.max(memoryStats.meilleurScore, finalScore);
+                memoryStats.tempsTotal += timeElapsed;
+                memoryStats.moyenneTentatives = Math.round(
+                    (memoryStats.moyenneTentatives * (memoryStats.partiesJouees - 1) + totalAttempts) / memoryStats.partiesJouees
+                );
+                
+                // Sauvegarder
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            }
+        }
+
+        function getCurrentStudentName() {
+            // Cette fonction devrait être adaptée selon ton système de gestion d'élèves
+            // Pour le moment, on suppose qu'il y a une variable globale ou un moyen de récupérer le nom
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const names = Object.keys(students);
+            return names.length > 0 ? names[names.length - 1] : null; // Prend le dernier élève connecté
+        }
+
+        function resetGame() {
+            currentLevel = null;
+            gameCards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+            attempts = 0;
+            score = 0;
+            startTime = null;
+            isProcessing = false;
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            document.getElementById('score').textContent = '0';
+            document.getElementById('timer').textContent = '00:00';
+        }
+
+        function restartGame() {
+            if (currentLevel) {
+                resetGame();
+                const levelNumber = Object.keys(LEVELS).find(key => LEVELS[key] === currentLevel);
+                startLevel(parseInt(levelNumber));
+            }
+        }
+
+        function backToLevels() {
+            showLevelSelector();
+        }
+
+        function goHome() {
+            // Retour au menu principal de l'application
+            window.history.back();
+        }
+    </script>
+</body>
+</html>
