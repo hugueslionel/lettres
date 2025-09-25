@@ -501,7 +501,7 @@
             document.getElementById('loginScreen').style.display = 'block';
             document.getElementById('userBar').classList.add('hidden');
             document.getElementById('quickSettings').classList.add('hidden');
-            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('mainMenu').style.display = 'none'; // Changé pour cohérence
             document.getElementById('teacherPanel').style.display = 'none';
             loadStudents();
         }
@@ -510,7 +510,7 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('userBar').classList.remove('hidden');
             document.getElementById('quickSettings').classList.remove('hidden');
-            document.getElementById('mainMenu').classList.remove('hidden');
+            document.getElementById('mainMenu').style.display = 'block'; // Changé de classList à style.display
             
             // Mettre à jour l'affichage utilisateur
             updateUserDisplay();
@@ -557,11 +557,21 @@
         }
 
         // Lancement des jeux
-       function startGame(gameType) {
-            // Sauvegarder l'élève actuel et les paramètres
+        function startGame(gameType) {
+            if (!currentStudent) {
+                alert('Erreur : aucun élève connecté');
+                return;
+            }
+            
+            if (gameSettings.writings.length === 0) {
+                alert('Veuillez sélectionner au moins une écriture !');
+                return;
+            }
+            
+            // Sauvegarder l'élève actuel et les paramètres dans sessionStorage
             sessionStorage.setItem('currentStudent', JSON.stringify(currentStudent));
             sessionStorage.setItem('gameSettings', JSON.stringify(gameSettings));
-    
+            
             // Rediriger vers le bon jeu
             const gameUrls = {
                 'memory': 'exercice1.html',
@@ -571,9 +581,14 @@
                 'sorting': 'exercice5.html',
                 'train': 'exercice6.html'
             };
-    
-            window.location.href = gameUrls[gameType];
+            
+            if (gameUrls[gameType]) {
+                window.location.href = gameUrls[gameType];
+            } else {
+                alert(`Jeu "${gameType}" non encore implémenté !`);
+            }
         }
+
         function updateStudentStats(gameType) {
             if (!currentStudent) return;
             
