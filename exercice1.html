@@ -162,7 +162,7 @@
         .memory-card.flipped {
             background: white;
             color: #2d3436;
-            transform: rotateY(180deg);
+            /* Supprimé transform: rotateY(180deg) qui causait l'inversion */
         }
 
         .memory-card.matched {
@@ -548,6 +548,9 @@
                     score += 10;
                     updateScore();
                     
+                    // Prononcer la lettre trouvée
+                    playLetterSound(first.card.letter);
+                    
                     // Vérifier si le jeu est terminé
                     if (matchedPairs === currentLevel.letters.length) {
                         setTimeout(() => endGame(), 500);
@@ -568,6 +571,20 @@
                 flippedCards = [];
                 isProcessing = false;
             }, 1000);
+        }
+
+        function playLetterSound(letter) {
+            try {
+                // Créer et jouer le son de la lettre
+                const audio = new Audio(`sounds/letters/${letter.toLowerCase()}.mp3`);
+                audio.volume = 0.7; // Volume à 70%
+                audio.play().catch(error => {
+                    console.log(`Impossible de jouer le son pour la lettre ${letter}:`, error);
+                    // Pas d'alerte pour ne pas perturber le jeu
+                });
+            } catch (error) {
+                console.log(`Erreur lors du chargement du son pour la lettre ${letter}:`, error);
+            }
         }
 
         function startTimer() {
@@ -654,11 +671,14 @@
         }
 
         function getCurrentStudentName() {
-            // Cette fonction devrait être adaptée selon ton système de gestion d'élèves
-            // Pour le moment, on suppose qu'il y a une variable globale ou un moyen de récupérer le nom
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const names = Object.keys(students);
-            return names.length > 0 ? names[names.length - 1] : null; // Prend le dernier élève connecté
+            // Récupérer l'élève depuis sessionStorage (passé par l'interface principale)
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                return currentStudent ? currentStudent.nom : null;
+            } catch (error) {
+                console.log('Erreur lors de la récupération de l\'élève:', error);
+                return null;
+            }
         }
 
         function resetGame() {
@@ -694,7 +714,18 @@
 
         function goHome() {
             // Retour au menu principal de l'application
-            window.history.back();
+            try {
+                // Essayer d'utiliser l'historique du navigateur
+                if (document.referrer && document.referrer.includes('index')) {
+                    window.history.back();
+                } else {
+                    // Sinon rediriger vers index.html
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                // En cas d'erreur, redirection directe
+                window.location.href = 'index.html';
+            }
         }
     </script>
 </body>
