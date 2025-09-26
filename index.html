@@ -333,27 +333,6 @@
             </div>
         </div>
 
-        <!-- Paramètres rapides -->
-        <div id="quickSettings" class="quick-settings hidden">
-            <div class="setting-group">
-                <label>🔤 Lettres à travailler :</label>
-                <div class="checkbox-group">
-                    <div class="checkbox-item" onclick="toggleLetterGroup(this, 'all')">
-                        <input type="checkbox" checked> Toutes
-                    </div>
-                    <div class="checkbox-item" onclick="toggleLetterGroup(this, 'vowels')">
-                        <input type="checkbox"> Voyelles (A,E,I,O,U)
-                    </div>
-                    <div class="checkbox-item" onclick="toggleLetterGroup(this, 'first')">
-                        <input type="checkbox"> A à M
-                    </div>
-                    <div class="checkbox-item" onclick="toggleLetterGroup(this, 'second')">
-                        <input type="checkbox"> N à Z
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Menu principal des jeux -->
         <div id="mainMenu" class="main-menu">
             <div class="games-grid">
@@ -399,11 +378,7 @@
     <script>
         // Variables globales
         let currentStudent = null;
-        let gameSettings = {
-            writings: ['majuscule', 'script', 'cursive'],
-            letters: 'all'
-        };
-
+        
         // Données par défaut pour les élèves
         const defaultStudentData = {
             nom: '',
@@ -613,11 +588,8 @@
                 return;
             }
             
-            // Supprimer la vérification des écritures puisqu'on a supprimé cette section
-            
-            // Sauvegarder l'élève actuel et les paramètres dans sessionStorage
+            // Sauvegarder l'élève actuel dans sessionStorage
             sessionStorage.setItem('currentStudent', JSON.stringify(currentStudent));
-            sessionStorage.setItem('gameSettings', JSON.stringify(gameSettings));
             
             // Rediriger vers le bon jeu
             const gameUrls = {
@@ -726,15 +698,9 @@
             }
         }
 
-        // Initialiser les paramètres visuels
+        // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
-            // Cocher les paramètres par défaut
-            document.querySelectorAll('.checkbox-item').forEach(item => {
-                const checkbox = item.querySelector('input[type="checkbox"]');
-                if (checkbox.checked) {
-                    item.classList.add('checked');
-                }
-            });
+            loadStudents();
         });
     </script>
 </body>
