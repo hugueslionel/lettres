@@ -333,6 +333,27 @@
             </div>
         </div>
 
+        <!-- Paramètres rapides -->
+        <div id="quickSettings" class="quick-settings hidden">
+            <div class="setting-group">
+                <label>🔤 Lettres à travailler :</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item" onclick="toggleLetterGroup(this, 'all')">
+                        <input type="checkbox" checked> Toutes
+                    </div>
+                    <div class="checkbox-item" onclick="toggleLetterGroup(this, 'vowels')">
+                        <input type="checkbox"> Voyelles (A,E,I,O,U)
+                    </div>
+                    <div class="checkbox-item" onclick="toggleLetterGroup(this, 'first')">
+                        <input type="checkbox"> A à M
+                    </div>
+                    <div class="checkbox-item" onclick="toggleLetterGroup(this, 'second')">
+                        <input type="checkbox"> N à Z
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Menu principal des jeux -->
         <div id="mainMenu" class="main-menu">
             <div class="games-grid">
