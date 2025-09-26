@@ -299,10 +299,11 @@
                     <option value="">-- Choisir un prénom --</option>
                 </select>
                 <br>
-                <input type="text" id="newStudentInput" placeholder="Nouveau prénom" style="display: none;">
+                <input type="text" id="newStudentInput" placeholder="Nouveau prénom" style="display: none;" onkeypress="if(event.key==='Enter') addNewStudent()">
             </div>
             <button class="btn" onclick="loginStudent()">Commencer à jouer</button>
-            <button class="btn btn-secondary" onclick="toggleNewStudent()">Nouveau prénom</button>
+            <button class="btn btn-secondary" onclick="toggleNewStudent()" id="newStudentBtn">Nouveau prénom</button>
+            <button class="btn" onclick="addNewStudent()" id="addStudentBtn" style="display: none;">Ajouter élève</button>
             <br><br>
             <button class="btn btn-secondary" onclick="toggleTeacherPanel()">👩‍🏫 Espace enseignant</button>
         </div>
@@ -440,30 +441,81 @@
         function toggleNewStudent() {
             const input = document.getElementById('newStudentInput');
             const select = document.getElementById('studentSelect');
-            const btn = event.target; // Le bouton qui a été cliqué
+            const newStudentBtn = document.getElementById('newStudentBtn');
+            const addStudentBtn = document.getElementById('addStudentBtn');
             
             if (input.style.display === 'none') {
+                // Afficher le mode "nouveau prénom"
                 input.style.display = 'block';
                 input.focus();
                 select.style.display = 'none';
-                btn.textContent = 'Annuler';
+                newStudentBtn.textContent = 'Annuler';
+                addStudentBtn.style.display = 'inline-block';
             } else {
+                // Revenir au mode "sélection"
                 input.style.display = 'none';
                 select.style.display = 'block';
                 input.value = '';
-                btn.textContent = 'Nouveau prénom';
-                select.selectedIndex = 0; // Remettre sur "Choisir un prénom"
+                newStudentBtn.textContent = 'Nouveau prénom';
+                addStudentBtn.style.display = 'none';
+                select.selectedIndex = 0;
             }
+        }
+
+        function addNewStudent() {
+            const input = document.getElementById('newStudentInput');
+            const studentName = input.value.trim();
+            
+            if (!studentName) {
+                alert('Veuillez saisir un prénom !');
+                input.focus();
+                return;
+            }
+
+            // Nettoyer le nom (première lettre majuscule)
+            const cleanName = studentName.charAt(0).toUpperCase() + studentName.slice(1).toLowerCase();
+
+            // Vérifier si l'élève existe déjà
+            let students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            
+            if (students[cleanName]) {
+                alert(`L'élève "${cleanName}" existe déjà dans la liste !`);
+                input.focus();
+                return;
+            }
+
+            // Créer le nouvel élève
+            students[cleanName] = {...defaultStudentData, nom: cleanName};
+            localStorage.setItem('alphabet_students', JSON.stringify(students));
+
+            // Feedback utilisateur
+            alert(`Élève "${cleanName}" ajouté avec succès !`);
+
+            // Réinitialiser l'interface
+            input.value = '';
+            loadStudents(); // Recharger la liste
+            
+            // Optionnel : revenir automatiquement au mode sélection
+            toggleNewStudent();
         }
 
         function loginStudent() {
             const select = document.getElementById('studentSelect');
             const input = document.getElementById('newStudentInput');
             
-            let studentName = select.value || input.value.trim();
+            let studentName = '';
+            
+            // Récupérer le nom selon le mode actuel
+            if (input.style.display !== 'none' && input.value.trim()) {
+                // Mode "nouveau prénom" avec du texte
+                studentName = input.value.trim();
+            } else if (select.style.display !== 'none' && select.value) {
+                // Mode "sélection" avec un élève sélectionné
+                studentName = select.value;
+            }
             
             if (!studentName) {
-                alert('Veuillez choisir ou saisir un prénom !');
+                alert('Veuillez choisir un élève dans la liste ou créer un nouvel élève !');
                 return;
             }
 
@@ -474,8 +526,10 @@
             let students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
             
             if (!students[studentName]) {
+                // Créer l'élève s'il n'existe pas encore
                 students[studentName] = {...defaultStudentData, nom: studentName};
             } else {
+                // Mettre à jour la dernière connexion
                 students[studentName].derniereConnexion = new Date().toISOString().split('T')[0];
             }
             
@@ -486,6 +540,8 @@
             input.style.display = 'none';
             select.style.display = 'block';
             input.value = '';
+            document.getElementById('newStudentBtn').textContent = 'Nouveau prénom';
+            document.getElementById('addStudentBtn').style.display = 'none';
             
             showMainMenu();
         }
