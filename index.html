@@ -327,11 +327,14 @@
                 <button class="btn" onclick="exportData()">💾 Exporter les données</button>
                 <button class="btn btn-secondary" onclick="showClassStats()">📈 Statistiques classe</button>
                 <button class="btn" onclick="clearAllData()" style="background: #e17055;">🗑️ Effacer toutes les données</button>
-                <button class="btn" onclick="resetApplication()" style="background: #d63031;">🔄 Remise à zéro complète</button>
             </div>
             <div id="classStats" class="stats-grid hidden">
                 <!-- Les stats seront générées ici -->
             </div>
+        </div>
+        <!-- ✅ Paramètres rapides -->
+        <div id="quickSettings" class="quick-settings hidden">
+            <h1>Choisis ton jeu</h1>
         </div>
 
         <!-- Menu principal des jeux -->
@@ -548,7 +551,7 @@
             document.getElementById('userAvatar').textContent = currentStudent.nom.charAt(0);
             document.getElementById('userName').textContent = `Bonjour ${currentStudent.nom} !`;
             document.getElementById('userProgress').textContent = 
-                `${currentStudent.statistiques.sessionsJouees} sessions jouées - ${Math.floor(currentStudent.statistiques.tempsTotal / 60)} minutes`;
+                `${currentStudent.statistiques.sessionsJouees} session(s) jouées - ${Math.floor(currentStudent.statistiques.tempsTotal / 60)} minute(s)`;
         }
 
         // Gestion des paramètres
@@ -696,29 +699,6 @@
                 localStorage.removeItem('alphabet_students');
                 alert('Toutes les données ont été supprimées.');
                 location.reload();
-            }
-        }
-
-        function resetApplication() {
-            if (confirm('🔄 REMISE À ZÉRO COMPLÈTE\n\nCette action va :\n- Supprimer tous les élèves\n- Effacer toutes les statistiques\n- Nettoyer toutes les données de session\n- Redémarrer l\'application\n\nÊtes-vous absolument certain(e) ?')) {
-                // Supprimer toutes les données localStorage
-                localStorage.removeItem('alphabet_students');
-                
-                // Supprimer toutes les données sessionStorage
-                sessionStorage.clear();
-                
-                // Nettoyer toutes les autres données possibles
-                for (let i = localStorage.length - 1; i >= 0; i--) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith('alphabet_')) {
-                        localStorage.removeItem(key);
-                    }
-                }
-                
-                alert('✅ Remise à zéro complète effectuée !');
-                
-                // Recharger complètement la page
-                window.location.reload(true);
             }
         }
 
