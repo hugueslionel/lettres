@@ -687,7 +687,7 @@
         function playWrongAnswerSound(wrongLetter) {
             try {
                 // Jouer d'abord le son "clic"
-                const clickAudio = new Audio('sounds/clic.mp3');
+                const clickAudio = new Audio('sounds/letters/clic.mp3');
                 clickAudio.volume = 0.7;
                 clickAudio.play().catch(error => {
                     console.log('Impossible de jouer le son clic:', error);
