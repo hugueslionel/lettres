@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Désordonné</title>
+    <style>
+        @font-face {
+            font-family: 'BelleAllureGS';
+            src: url('fonts/BelleAllureGS-Gros.otf') format('opentype');
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'ScriptEcole2';
+            src: url('fonts/ScriptEcole2.ttf') format('truetype');
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #fd79a8, #fdcb6e);
+            min-height: 100vh;
+            color: #2d3436;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .game-title h1 {
+            font-size: 2em;
+            color: #2d3436;
+        }
+
+        .game-info {
+            text-align: right;
+            font-size: 1.1em;
+        }
+
+        .score {
+            color: #00b894;
+            font-weight: bold;
+        }
+
+        /* Sélection du niveau */
+        .level-selector {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .level-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .level-btn {
+            background: #fd79a8;
+            color: white;
+            border: none;
+            padding: 25px 40px;
+            font-size: 1.2em;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 220px;
+        }
+
+        .level-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(253, 121, 168, 0.4);
+        }
+
+        .level-btn.easy { background: #00b894; }
+        .level-btn.medium { background: #fdcb6e; color: #2d3436; }
+        .level-btn.hard { background: #e17055; }
+
+        /* Zone de jeu */
+        .game-area {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .instruction {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #2d3436;
+        }
+
+        /* Tableau alphabétique */
+        .alphabet-grid {
+            display: grid;
+            grid-template-columns: repeat(13, 1fr);
+            gap: 8px;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px solid #fd79a8;
+        }
+
+        .alphabet-slot {
+            aspect-ratio: 1;
+            background: white;
+            border: 3px dashed #ddd;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .alphabet-slot:hover {
+            background: #f1f2f6;
+            border-color: #fd79a8;
+            transform: scale(1.05);
+        }
+
+        .alphabet-slot.filled {
+            background: #00b894;
+            border-color: #00b894;
+            color: white;
+            cursor: default;
+            font-weight: bold;
+        }
+
+        .alphabet-slot.filled:hover {
+            transform: scale(1);
+        }
+
+        .slot-label {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.4em;
+            color: #999;
+            font-weight: normal;
+        }
+
+        /* Zone des lettres à placer */
+        .letters-pool {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px solid #fdcb6e;
+            margin-bottom: 20px;
+        }
+
+        .pool-title {
+            text-align: center;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #2d3436;
+            font-weight: bold;
+        }
+
+        .letters-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .letter-item {
+            background: white;
+            border: 3px solid #fdcb6e;
+            border-radius: 12px;
+            padding: 15px 20px;
+            font-size: 2.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 70px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .letter-item:hover {
+            background: #fff3cd;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(253, 203, 110, 0.4);
+        }
+
+        .letter-item.selected {
+            background: #fdcb6e;
+            border-color: #fdcb6e;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .letter-majuscule {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .letter-script {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            text-transform: lowercase;
+        }
+
+        .letter-cursive {
+            font-family: 'BelleAllureGS', cursive;
+            text-transform: lowercase;
+        }
+
+        /* Contrôles */
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .btn-secondary {
+            background: #fd79a8;
+        }
+
+        .btn-danger {
+            background: #e17055;
+        }
+
+        /* Écran de victoire */
+        .game-over {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .victory-animation {
+            font-size: 5em;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .final-message {
+            font-size: 1.5em;
+            margin: 20px 0;
+            color: #2d3436;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .alphabet-grid {
+                grid-template-columns: repeat(10, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .alphabet-grid {
+                grid-template-columns: repeat(7, 1fr);
+                gap: 5px;
+                padding: 15px;
+            }
+
+            .alphabet-slot {
+                font-size: 1.5em;
+            }
+
+            .letter-item {
+                font-size: 2em;
+                padding: 10px 15px;
+                min-width: 60px;
+            }
+
+            .level-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .alphabet-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            .alphabet-slot {
+                font-size: 1.2em;
+            }
+
+            .letter-item {
+                font-size: 1.8em;
+                padding: 8px 12px;
+                min-width: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <div class="header">
+            <div class="game-title">
+                <span>🔀</span>
+                <h1>Alphabet Désordonné</h1>
+            </div>
+            <div class="game-info">
+                <div class="score">Lettres placées: <span id="score">0</span>/26</div>
+            </div>
+        </div>
+
+        <!-- Sélecteur de niveau -->
+        <div id="levelSelector" class="level-selector">
+            <h2>🎯 Choisis ton niveau</h2>
+            <div class="level-buttons">
+                <button class="level-btn easy" onclick="startLevel(1)">
+                    <div>🟢 Niveau 1</div>
+                    <small>Majuscules</small>
+                </button>
+                <button class="level-btn medium" onclick="startLevel(2)">
+                    <div>🟡 Niveau 2</div>
+                    <small>Script (minuscules)</small>
+                </button>
+                <button class="level-btn hard" onclick="startLevel(3)">
+                    <div>🔴 Niveau 3</div>
+                    <small>Cursives</small>
+                </button>
+            </div>
+        </div>
+
+        <!-- Zone de jeu -->
+        <div id="gameArea" class="game-area">
+            <div class="instruction">Clique sur les lettres pour les ranger dans l'ordre alphabétique</div>
+            
+            <!-- Tableau alphabétique -->
+            <div class="alphabet-grid" id="alphabetGrid"></div>
+
+            <!-- Zone des lettres à placer -->
+            <div class="letters-pool">
+                <div class="pool-title">Lettres à ranger :</div>
+                <div class="letters-grid" id="lettersPool"></div>
+            </div>
+
+            <div class="game-controls">
+                <button class="btn" onclick="resetGame()">🔄 Recommencer</button>
+                <button class="btn btn-secondary" onclick="backToLevels()">📋 Changer niveau</button>
+                <button class="btn btn-danger" onclick="goHome()">🏠 Menu principal</button>
+            </div>
+        </div>
+
+        <!-- Écran de victoire -->
+        <div id="gameOver" class="game-over">
+            <div class="victory-animation">🎉</div>
+            <h2>Bravo !</h2>
+            <div class="final-message">Tu as remis tout l'alphabet dans l'ordre !</div>
+
+            <div class="game-controls">
+                <button class="btn" onclick="restartGame()">🔄 Rejouer</button>
+                <button class="btn btn-secondary" onclick="backToLevels()">📋 Autres niveaux</button>
+                <button class="btn btn-danger" onclick="goHome()">🏠 Menu principal</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const ALPHABET = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
+                          'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+
+        const LEVELS = {
+            1: { name: "Majuscules", writing: "majuscule" },
+            2: { name: "Script", writing: "script" },
+            3: { name: "Cursives", writing: "cursive" }
+        };
+
+        // Variables du jeu
+        let currentLevel = null;
+        let selectedLetter = null;
+        let placedLetters = [];
+        let nextSlotIndex = 0;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            showLevelSelector();
+        });
+
+        function showLevelSelector() {
+            document.getElementById('levelSelector').style.display = 'block';
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function startLevel(level) {
+            currentLevel = LEVELS[level];
+            if (!currentLevel) return;
+
+            setupGame();
+            
+            document.getElementById('levelSelector').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function setupGame() {
+            placedLetters = [];
+            selectedLetter = null;
+            nextSlotIndex = 0;
+
+            // Créer le tableau alphabétique
+            createAlphabetGrid();
+
+            // Créer la zone des lettres mélangées
+            createLettersPool();
+
+            updateScore();
+        }
+
+        function createAlphabetGrid() {
+            const grid = document.getElementById('alphabetGrid');
+            grid.innerHTML = '';
+
+            ALPHABET.forEach((letter, index) => {
+                const slot = document.createElement('div');
+                slot.className = 'alphabet-slot';
+                slot.dataset.index = index;
+                slot.dataset.letter = letter;
+                
+                const label = document.createElement('div');
+                label.className = 'slot-label';
+                label.textContent = index + 1;
+                slot.appendChild(label);
+
+                slot.onclick = () => placeLetterInSlot(index);
+                grid.appendChild(slot);
+            });
+        }
+
+        function createLettersPool() {
+            const pool = document.getElementById('lettersPool');
+            pool.innerHTML = '';
+
+            // Mélanger l'alphabet
+            const shuffledAlphabet = shuffleArray([...ALPHABET]);
+
+            shuffledAlphabet.forEach(letter => {
+                const letterDiv = document.createElement('div');
+                letterDiv.className = `letter-item letter-${currentLevel.writing}`;
+                letterDiv.textContent = getDisplayLetter(letter);
+                letterDiv.dataset.letter = letter;
+                letterDiv.onclick = () => selectLetter(letter, letterDiv);
+                pool.appendChild(letterDiv);
+            });
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function getDisplayLetter(letter) {
+            switch(currentLevel.writing) {
+                case 'majuscule':
+                    return letter.toUpperCase();
+                case 'script':
+                    return letter.toLowerCase();
+                case 'cursive':
+                    return letter.toLowerCase();
+                default:
+                    return letter;
+            }
+        }
+
+        function selectLetter(letter, element) {
+            // Déselectionner la précédente
+            document.querySelectorAll('.letter-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // Sélectionner la nouvelle
+            selectedLetter = letter;
+            element.classList.add('selected');
+
+            // Prononcer la lettre
+            playLetterSound(letter);
+        }
+
+        function placeLetterInSlot(slotIndex) {
+            const slot = document.querySelector(`.alphabet-slot[data-index="${slotIndex}"]`);
+            
+            // Si la case est déjà remplie, prononcer la lettre
+            if (placedLetters[slotIndex]) {
+                playLetterSound(placedLetters[slotIndex]);
+                return;
+            }
+
+            // Si aucune lettre n'est sélectionnée
+            if (!selectedLetter) {
+                // Prononcer quelle lettre doit aller ici
+                const correctLetter = ALPHABET[slotIndex];
+                playLetterSound(correctLetter);
+                return;
+            }
+
+            const correctLetter = ALPHABET[slotIndex];
+
+            // Vérifier si c'est la bonne lettre
+            if (selectedLetter === correctLetter) {
+                // Bonne réponse
+                slot.innerHTML = `<span class="letter-${currentLevel.writing}">${getDisplayLetter(selectedLetter)}</span>`;
+                slot.classList.add('filled');
+                placedLetters[slotIndex] = selectedLetter;
+                
+                // Désélectionner la lettre dans le pool (visuellement)
+                const selectedElement = document.querySelector(`.letter-item[data-letter="${selectedLetter}"].selected`);
+                if (selectedElement) {
+                    selectedElement.style.opacity = '0.3';
+                    selectedElement.style.pointerEvents = 'none';
+                }
+
+                // Prononcer la lettre
+                playLetterSound(selectedLetter);
+
+                selectedLetter = null;
+                document.querySelectorAll('.letter-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+
+                updateScore();
+                checkWin();
+            } else {
+                // Mauvaise réponse - jouer clic puis la bonne lettre
+                playWrongAnswerSound(correctLetter);
+            }
+        }
+
+        function playLetterSound(letter) {
+            try {
+                const audio = new Audio(`sounds/letters/${letter.toLowerCase()}.mp3`);
+                audio.volume = 0.7;
+                audio.play().catch(error => {
+                    console.log(`Impossible de jouer le son pour la lettre ${letter}:`, error);
+                });
+            } catch (error) {
+                console.log(`Erreur lors du chargement du son:`, error);
+            }
+        }
+
+        function playWrongAnswerSound(correctLetter) {
+            try {
+                const clickAudio = new Audio('sounds/clic.mp3');
+                clickAudio.volume = 0.7;
+                clickAudio.play().catch(error => {
+                    console.log('Impossible de jouer le son clic:', error);
+                });
+                
+                setTimeout(() => {
+                    playLetterSound(correctLetter);
+                }, 400);
+            } catch (error) {
+                console.log('Erreur lors du chargement des sons:', error);
+            }
+        }
+
+        function updateScore() {
+            const filledCount = placedLetters.filter(l => l).length;
+            document.getElementById('score').textContent = filledCount;
+        }
+
+        function checkWin() {
+            if (placedLetters.filter(l => l).length === ALPHABET.length) {
+                setTimeout(() => {
+                    endGame();
+                }, 500);
+            }
+        }
+
+        function endGame() {
+            // Sauvegarder les statistiques
+            saveGameStats();
+
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function saveGameStats() {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                if (!currentStudent) return;
+
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                if (!students[currentStudent.nom]) return;
+
+                const student = students[currentStudent.nom];
+                
+                student.statistiques.sessionsJouees++;
+                student.statistiques.lettresTravaillees = [
+                    ...new Set([...student.statistiques.lettresTravaillees, ...ALPHABET])
+                ];
+                
+                if (!student.resultatsParJeu.disorder) {
+                    student.resultatsParJeu.disorder = {
+                        partiesJouees: 0,
+                        niveauxReussis: {}
+                    };
+                }
+                
+                student.resultatsParJeu.disorder.partiesJouees++;
+                student.resultatsParJeu.disorder.niveauxReussis[currentLevel.name] = 
+                    (student.resultatsParJeu.disorder.niveauxReussis[currentLevel.name] || 0) + 1;
+                
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            } catch (error) {
+                console.log('Erreur lors de la sauvegarde:', error);
+            }
+        }
+
+        function resetGame() {
+            setupGame();
+        }
+
+        function restartGame() {
+            if (currentLevel) {
+                setupGame();
+                document.getElementById('gameOver').style.display = 'none';
+                document.getElementById('gameArea').style.display = 'block';
+            }
+        }
+
+        function backToLevels() {
+            showLevelSelector();
+        }
+
+        function goHome() {
+            try {
+                if (document.referrer && document.referrer.includes('index')) {
+                    window.history.back();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
