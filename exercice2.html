@@ -156,25 +156,28 @@
         }
 
         .choices-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            max-width: 600px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
             margin: 0 auto 30px;
+            max-width: 900px;
         }
 
         .choice-btn {
             background: white;
             border: 3px solid #6c5ce7;
             border-radius: 15px;
-            padding: 20px;
-            font-size: 4em;
+            padding: 15px 20px;
+            font-size: 3em;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-height: 120px;
+            min-height: 90px;
+            min-width: 90px;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex: 0 0 auto;
         }
 
         .choice-btn:hover {
@@ -195,6 +198,8 @@
             border-color: #e17055;
             color: white;
             animation: wrongAnswer 0.5s ease-in-out;
+            opacity: 0.4;
+            pointer-events: none;
         }
 
         .choice-btn.disabled {
@@ -267,6 +272,25 @@
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+            display: none;
+        }
+
+        .next-arrow {
+            display: none;
+            font-size: 3em;
+            color: #00b894;
+            cursor: pointer;
+            animation: bounce 1s infinite;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .next-arrow:hover {
+            transform: scale(1.2);
+        }
+
+        .next-arrow.visible {
+            display: block;
         }
 
         /* Écran de fin */
@@ -385,10 +409,12 @@
             <div class="question-text" id="questionText">Trouve la même lettre :</div>
             <div class="question-letter" id="questionLetter"></div>
             <div class="choices-grid" id="choicesGrid"></div>
+            <div class="next-arrow" id="nextArrow" onclick="nextQuestion()">
+                ⬇️ Question suivante ⬇️
+            </div>
             <div class="feedback" id="feedback"></div>
             
             <div class="game-controls">
-                <button class="btn" id="nextBtn" onclick="nextQuestion()" disabled>Question suivante</button>
                 <button class="btn btn-secondary" onclick="backToLevels()">🔄 Changer niveau</button>
                 <button class="btn btn-danger" onclick="goHome()">🏠 Menu principal</button>
             </div>
@@ -566,7 +592,7 @@
             document.getElementById('score').textContent = score;
             document.getElementById('totalQuestions').textContent = currentLevel.questionsCount;
             document.getElementById('feedback').textContent = '';
-            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('nextArrow').classList.remove('visible');
         }
 
         function showQuestion() {
@@ -592,14 +618,15 @@
                 const button = document.createElement('button');
                 button.className = 'choice-btn';
                 button.innerHTML = `<span class="letter-${question.answerWriting}">${getDisplayLetter(choice, question.answerWriting)}</span>`;
+                button.dataset.letter = choice;
                 button.onclick = () => checkAnswer(choice, button);
                 choicesGrid.appendChild(button);
             });
 
-            // Reset feedback et bouton
+            // Reset feedback et flèche
             document.getElementById('feedback').textContent = '';
             document.getElementById('feedback').className = 'feedback';
-            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('nextArrow').classList.remove('visible');
         }
 
         function getDisplayLetter(letter, writing) {
@@ -617,18 +644,20 @@
 
         function checkAnswer(selectedLetter, buttonElement) {
             if (isAnswering) return;
-            isAnswering = true;
 
             const question = questions[currentQuestionIndex];
             const isCorrect = selectedLetter === question.correctAnswer;
             const feedback = document.getElementById('feedback');
 
-            // Désactiver tous les boutons
-            document.querySelectorAll('.choice-btn').forEach(btn => {
-                btn.classList.add('disabled');
-            });
-
             if (isCorrect) {
+                // Réponse correcte
+                isAnswering = true;
+                
+                // Désactiver tous les boutons
+                document.querySelectorAll('.choice-btn').forEach(btn => {
+                    btn.classList.add('disabled');
+                });
+                
                 buttonElement.classList.add('correct');
                 feedback.textContent = `✅ Correct ! C'est bien la lettre "${question.letter.toUpperCase()}"`;
                 feedback.className = 'feedback correct';
@@ -637,23 +666,44 @@
                 
                 // Jouer le son de la lettre
                 playLetterSound(question.letter);
+                
+                // Afficher la flèche pour passer à la question suivante
+                document.getElementById('nextArrow').classList.add('visible');
             } else {
+                // Réponse incorrecte - on continue à chercher
                 buttonElement.classList.add('wrong');
-                
-                // Highlight correct answer
-                document.querySelectorAll('.choice-btn').forEach(btn => {
-                    const span = btn.querySelector('span');
-                    if (span && getDisplayLetter(question.correctAnswer, question.answerWriting) === span.textContent) {
-                        btn.classList.add('correct');
-                    }
-                });
-                
-                feedback.textContent = `❌ Pas tout à fait ! C'était la lettre "${question.letter.toUpperCase()}"`;
+                feedback.textContent = `❌ Ce n'est pas la bonne lettre, réessaie !`;
                 feedback.className = 'feedback wrong';
+                
+                // Jouer le son "clic" puis la lettre fausse
+                playWrongAnswerSound(selectedLetter);
+                
+                // Le bouton reste désactivé mais les autres restent cliquables
             }
 
             document.getElementById('score').textContent = score;
-            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function playWrongAnswerSound(wrongLetter) {
+            try {
+                // Jouer d'abord le son "clic"
+                const clickAudio = new Audio('sounds/clic.mp3');
+                clickAudio.volume = 0.7;
+                clickAudio.play().catch(error => {
+                    console.log('Impossible de jouer le son clic:', error);
+                });
+                
+                // Ensuite jouer la lettre fausse après un délai
+                setTimeout(() => {
+                    const letterAudio = new Audio(`sounds/letters/${wrongLetter.toLowerCase()}.mp3`);
+                    letterAudio.volume = 0.7;
+                    letterAudio.play().catch(error => {
+                        console.log(`Impossible de jouer le son pour la lettre ${wrongLetter}:`, error);
+                    });
+                }, 400); // Délai de 400ms entre clic et lettre
+            } catch (error) {
+                console.log('Erreur lors du chargement des sons:', error);
+            }
         }
 
         function playLetterSound(letter) {
