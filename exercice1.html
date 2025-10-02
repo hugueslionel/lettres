@@ -429,16 +429,47 @@
         let timerInterval = null;
         let isProcessing = false;
 
-        // Initialisation
+        // Progression des niveaux (déblocage progressif)
+let memoryProgress = {
+    niveau1: { completed: false, locked: false },
+    niveau2: { completed: false, locked: true },
+    niveau3: { completed: false, locked: true }
+};
+
+// Initialisation
         document.addEventListener('DOMContentLoaded', function() {
             showLevelSelector();
         });
 
         function showLevelSelector() {
             document.getElementById('levelSelector').style.display = 'block';
-            document.getElementById('gameBoard').style.display = 'none';
+            // Sauvegarde progression
+    const levelNumber = Object.keys(LEVELS).find(key => LEVELS[key] === currentLevel);
+    const progressKey = `niveau${levelNumber}`;
+    memoryProgress[progressKey].completed = true;
+    const nextLevelKey = `niveau${parseInt(levelNumber) + 1}`;
+    if (memoryProgress[nextLevelKey]) {
+        memoryProgress[nextLevelKey].locked = false;
+    }
+
+    document.getElementById('gameBoard').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
             resetGame();
+
+    // Gérer le verrouillage des boutons de niveaux
+    const buttons = document.querySelectorAll('.level-buttons button');
+    buttons.forEach((btn, index) => {
+        const progressKey = `niveau${index + 1}`;
+        if (memoryProgress[progressKey].locked) {
+            btn.disabled = true;
+            btn.style.opacity = 0.5;
+            btn.style.cursor = "not-allowed";
+        } else {
+            btn.disabled = false;
+            btn.style.opacity = 1;
+            btn.style.cursor = "pointer";
+        }
+    });
         }
 
         function startLevel(level) {
