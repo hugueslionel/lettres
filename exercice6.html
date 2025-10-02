@@ -592,11 +592,16 @@
 
         function setupGame() {
             selectedLetter = null;
+
+            // 🔑 S'assurer que currentStage est bien à jour avec la progression enregistrée
+            const progressKey = `niveau${currentLevel.num}`;
+            currentStage = studentProgress[progressKey].currentStage;
+
             const lettersToPlace = currentLevel.stages[currentStage];
-            
+    
             document.getElementById('stageInfo').textContent = 
                 `Niveau ${currentLevel.num} - Étape ${currentStage + 1}/${currentLevel.stages.length} : Place ${lettersToPlace} lettres`;
-            
+    
             document.getElementById('progressInfo').textContent = 
                 `Étape ${currentStage + 1}/${currentLevel.stages.length}`;
 
