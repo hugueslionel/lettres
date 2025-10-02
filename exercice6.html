@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train de l'Alphabet</title>
+    <style>
+        @font-face {
+            font-family: 'BelleAllureGS';
+            src: url('fonts/BelleAllureGS-Gros.otf') format('opentype');
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'ScriptEcole2';
+            src: url('fonts/ScriptEcole2.ttf') format('truetype');
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #a29bfe, #74b9ff);
+            min-height: 100vh;
+            color: #2d3436;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .game-title h1 {
+            font-size: 2em;
+            color: #2d3436;
+        }
+
+        .game-info {
+            text-align: right;
+            font-size: 1.1em;
+        }
+
+        .progress-info {
+            color: #6c5ce7;
+            font-weight: bold;
+        }
+
+        /* Sélection du niveau */
+        .level-selector {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .level-cards {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .level-card {
+            background: white;
+            border: 3px solid #a29bfe;
+            border-radius: 15px;
+            padding: 25px;
+            min-width: 250px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .level-card:hover:not(.locked) {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(162, 155, 254, 0.4);
+        }
+
+        .level-card.locked {
+            background: #f8f9fa;
+            border-color: #ddd;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .level-card.completed {
+            background: #d5f4e6;
+            border-color: #00b894;
+        }
+
+        .level-header {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #2d3436;
+        }
+
+        .level-card.locked .level-header {
+            color: #999;
+        }
+
+        .level-progress {
+            font-size: 0.9em;
+            color: #636e72;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            background: #ddd;
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #00b894;
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        /* Zone de jeu */
+        .game-area {
+            display: none;
+        }
+
+        .stage-info {
+            text-align: center;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        /* Train */
+        .train-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .train-track {
+            display: flex;
+            gap: 10px;
+            min-height: 150px;
+            padding: 20px 0;
+            align-items: flex-end;
+        }
+
+        .locomotive {
+            background: linear-gradient(135deg, #e17055, #d63031);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(214, 48, 49, 0.3);
+            font-size: 2em;
+            flex-shrink: 0;
+        }
+
+        .wagon {
+            background: white;
+            border: 3px solid #a29bfe;
+            border-radius: 12px;
+            min-width: 80px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .wagon.empty {
+            background: #fff3cd;
+            border: 3px dashed #fdcb6e;
+            cursor: pointer;
+        }
+
+        .wagon.empty:hover {
+            background: #ffeaa7;
+            transform: translateY(-5px);
+            border-color: #fd79a8;
+        }
+
+        .wagon-number {
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            font-size: 0.8em;
+            color: #999;
+            font-weight: bold;
+        }
+
+        .wagon-letter {
+            font-size: 2.5em;
+        }
+
+        .wagon.filled {
+            background: #00b894;
+            border-color: #00b894;
+            color: white;
+        }
+
+        .wagon.prefilled {
+            background: #74b9ff;
+            border-color: #74b9ff;
+            color: white;
+        }
+
+        .letter-majuscule {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .letter-script {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            text-transform: lowercase;
+        }
+
+        .letter-cursive {
+            font-family: 'BelleAllureGS', cursive;
+            text-transform: lowercase;
+        }
+
+        /* Zone des lettres */
+        .letters-pool {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .pool-title {
+            text-align: center;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #2d3436;
+            font-weight: bold;
+        }
+
+        .letters-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .letter-item {
+            background: white;
+            border: 3px solid #a29bfe;
+            border-radius: 12px;
+            padding: 12px 18px;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 60px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .letter-item:hover {
+            background: #dfe6e9;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(162, 155, 254, 0.4);
+        }
+
+        .letter-item.selected {
+            background: #a29bfe;
+            border-color: #6c5ce7;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .letter-item.used {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Contrôles */
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .btn-secondary {
+            background: #a29bfe;
+        }
+
+        .btn-danger {
+            background: #e17055;
+        }
+
+        /* Message de transition */
+        .transition-message {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .transition-message.show {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .celebration {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .level-cards {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .wagon {
+                min-width: 70px;
+                min-height: 90px;
+            }
+
+            .wagon-letter {
+                font-size: 2em;
+            }
+
+            .letter-item {
+                font-size: 1.8em;
+                padding: 10px 15px;
+                min-width: 55px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <div class="header">
+            <div class="game-title">
+                <span>🚂</span>
+                <h1>Train de l'Alphabet</h1>
+            </div>
+            <div class="game-info">
+                <div class="progress-info" id="progressInfo"></div>
+            </div>
+        </div>
+
+        <!-- Sélection du niveau -->
+        <div id="levelSelector" class="level-selector">
+            <h2>📚 Choisis ton niveau</h2>
+            <div class="level-cards" id="levelCards"></div>
+        </div>
+
+        <!-- Message de transition -->
+        <div id="transitionMessage" class="transition-message">
+            <div class="celebration">🎉</div>
+            <h2 id="transitionTitle"></h2>
+            <p id="transitionText"></p>
+            <button class="btn" id="continueBtn" style="margin-top: 20px;">Continuer</button>
+        </div>
+
+        <!-- Zone de jeu -->
+        <div id="gameArea" class="game-area">
+            <div class="stage-info" id="stageInfo"></div>
+            
+            <!-- Train -->
+            <div class="train-container">
+                <div class="train-track" id="trainTrack"></div>
+            </div>
+
+            <!-- Zone des lettres -->
+            <div class="letters-pool">
+                <div class="pool-title">Lettres à placer :</div>
+                <div class="letters-grid" id="lettersPool"></div>
+            </div>
+
+            <div class="game-controls">
+                <button class="btn btn-secondary" onclick="backToLevels()">📋 Retour aux niveaux</button>
+                <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ALPHABET = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
+                          'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+
+        const LEVELS = {
+            1: { name: "Majuscules", writing: "majuscule", stages: [5, 10, 15] },
+            2: { name: "Script", writing: "script", stages: [5, 10, 15] },
+            3: { name: "Cursives", writing: "cursive", stages: [5, 10, 15] }
+        };
+
+        let currentLevel = null;
+        let currentStage = 0;
+        let selectedLetter = null;
+        let emptySlots = [];
+        let studentProgress = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProgress();
+            showLevelSelector();
+        });
+
+        function loadProgress() {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                if (!currentStudent) return;
+
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                if (!students[currentStudent.nom]) return;
+
+                const student = students[currentStudent.nom];
+                
+                if (!student.resultatsParJeu.train) {
+                    student.resultatsParJeu.train = {
+                        progression: {
+                            niveau1: { currentStage: 0, completed: false },
+                            niveau2: { currentStage: 0, completed: false, locked: true },
+                            niveau3: { currentStage: 0, completed: false, locked: true }
+                        }
+                    };
+                    localStorage.setItem('alphabet_students', JSON.stringify(students));
+                }
+                
+                studentProgress = student.resultatsParJeu.train.progression;
+            } catch (error) {
+                console.log('Erreur chargement progression:', error);
+                studentProgress = {
+                    niveau1: { currentStage: 0, completed: false },
+                    niveau2: { currentStage: 0, completed: false, locked: true },
+                    niveau3: { currentStage: 0, completed: false, locked: true }
+                };
+            }
+        }
+
+        function saveProgress() {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                if (!currentStudent) return;
+
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                if (!students[currentStudent.nom]) return;
+
+                const student = students[currentStudent.nom];
+                student.resultatsParJeu.train.progression = studentProgress;
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            } catch (error) {
+                console.log('Erreur sauvegarde progression:', error);
+            }
+        }
+
+        function showLevelSelector() {
+            const container = document.getElementById('levelCards');
+            container.innerHTML = '';
+
+            Object.keys(LEVELS).forEach(levelNum => {
+                const level = LEVELS[levelNum];
+                const progressKey = `niveau${levelNum}`;
+                const progress = studentProgress[progressKey];
+                
+                const card = document.createElement('div');
+                card.className = 'level-card';
+                
+                if (progress.locked) {
+                    card.classList.add('locked');
+                } else if (progress.completed) {
+                    card.classList.add('completed');
+                }
+
+                const stagesCompleted = progress.currentStage;
+                const totalStages = level.stages.length;
+                const progressPercent = (stagesCompleted / totalStages) * 100;
+
+                card.innerHTML = `
+                    <div class="level-header">
+                        ${progress.locked ? '🔒' : progress.completed ? '✅' : '🚂'} 
+                        Niveau ${levelNum} - ${level.name}
+                    </div>
+                    <div class="level-progress">
+                        Étape ${stagesCompleted}/${totalStages}
+                        ${progress.completed ? ' - Complété !' : ''}
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                `;
+
+                if (!progress.locked) {
+                    card.onclick = () => startLevel(parseInt(levelNum));
+                }
+
+                container.appendChild(card);
+            });
+
+            document.getElementById('levelSelector').style.display = 'block';
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('transitionMessage').classList.remove('show');
+        }
+
+        function startLevel(levelNum) {
+            currentLevel = { num: levelNum, ...LEVELS[levelNum] };
+            const progressKey = `niveau${levelNum}`;
+            currentStage = studentProgress[progressKey].currentStage;
+
+            if (currentStage >= currentLevel.stages.length) {
+                currentStage = 0;
+            }
+
+            setupGame();
+            
+            document.getElementById('levelSelector').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+        }
+
+        function setupGame() {
+            selectedLetter = null;
+            const lettersToPlace = currentLevel.stages[currentStage];
+            
+            document.getElementById('stageInfo').textContent = 
+                `Niveau ${currentLevel.num} - Étape ${currentStage + 1}/${currentLevel.stages.length} : Place ${lettersToPlace} lettres`;
+            
+            document.getElementById('progressInfo').textContent = 
+                `Étape ${currentStage + 1}/${currentLevel.stages.length}`;
+
+            emptySlots = selectRandomSlots(lettersToPlace);
+            createTrain();
+            createLettersPool();
+        }
+
+        function selectRandomSlots(count) {
+            const slots = [];
+            const availableIndices = [...Array(26).keys()];
+            
+            for (let i = 0; i < count; i++) {
+                const randomIndex = Math.floor(Math.random() * availableIndices.length);
+                slots.push(availableIndices[randomIndex]);
+                availableIndices.splice(randomIndex, 1);
+            }
+            
+            return slots.sort((a, b) => a - b);
+        }
+
+        function createTrain() {
+            const track = document.getElementById('trainTrack');
+            track.innerHTML = '<div class="locomotive">🚂</div>';
+
+            ALPHABET.forEach((letter, index) => {
+                const wagon = document.createElement('div');
+                const isEmpty = emptySlots.includes(index);
+                
+                wagon.className = isEmpty ? 'wagon empty' : 'wagon prefilled';
+                wagon.dataset.index = index;
+                wagon.dataset.letter = letter;
+                
+                const number = document.createElement('div');
+                number.className = 'wagon-number';
+                number.textContent = index + 1;
+                wagon.appendChild(number);
+
+                if (!isEmpty) {
+                    const letterSpan = document.createElement('div');
+                    letterSpan.className = `wagon-letter letter-${currentLevel.writing}`;
+                    letterSpan.textContent = getDisplayLetter(letter);
+                    wagon.appendChild(letterSpan);
+                } else {
+                    wagon.onclick = () => placeLetterInWagon(index);
+                }
+
+                track.appendChild(wagon);
+            });
+        }
+
+        function createLettersPool() {
+            const pool = document.getElementById('lettersPool');
+            pool.innerHTML = '';
+
+            const lettersToPlace = emptySlots.map(i => ALPHABET[i]);
+            const shuffled = shuffleArray([...lettersToPlace]);
+
+            shuffled.forEach(letter => {
+                const letterDiv = document.createElement('div');
+                letterDiv.className = `letter-item letter-${currentLevel.writing}`;
+                letterDiv.textContent = getDisplayLetter(letter);
+                letterDiv.dataset.letter = letter;
+                letterDiv.onclick = () => selectLetter(letter, letterDiv);
+                pool.appendChild(letterDiv);
+            });
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function getDisplayLetter(letter) {
+            switch(currentLevel.writing) {
+                case 'majuscule': return letter.toUpperCase();
+                case 'script': return letter.toLowerCase();
+                case 'cursive': return letter.toLowerCase();
+                default: return letter;
+            }
+        }
+
+        function selectLetter(letter, element) {
+            document.querySelectorAll('.letter-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            selectedLetter = letter;
+            element.classList.add('selected');
+            playLetterSound(letter);
+        }
+
+        function placeLetterInWagon(wagonIndex) {
+            const wagon = document.querySelector(`.wagon[data-index="${wagonIndex}"]`);
+            
+            if (!wagon.classList.contains('empty')) return;
+
+            if (!selectedLetter) {
+                const correctLetter = ALPHABET[wagonIndex];
+                playLetterSound(correctLetter);
+                return;
+            }
+
+            const correctLetter = ALPHABET[wagonIndex];
+
+            if (selectedLetter === correctLetter) {
+                const letterSpan = document.createElement('div');
+                letterSpan.className = `wagon-letter letter-${currentLevel.writing}`;
+                letterSpan.textContent = getDisplayLetter(selectedLetter);
+                wagon.appendChild(letterSpan);
+                wagon.classList.remove('empty');
+                wagon.classList.add('filled');
+                wagon.onclick = null;
+                
+                const selectedElement = document.querySelector(`.letter-item[data-letter="${selectedLetter}"].selected`);
+                if (selectedElement) {
+                    selectedElement.classList.add('used');
+                    selectedElement.classList.remove('selected');
+                }
+
+                playLetterSound(selectedLetter);
+                selectedLetter = null;
+                
+                checkStageComplete();
+            } else {
+                playWrongAnswerSound(correctLetter);
+            }
+        }
+
+        function checkStageComplete() {
+            const allFilled = document.querySelectorAll('.wagon.empty').length === 0;
+            
+            if (allFilled) {
+                setTimeout(() => {
+                    completeStage();
+                }, 500);
+            }
+        }
+
+        function completeStage() {
+            const progressKey = `niveau${currentLevel.num}`;
+            studentProgress[progressKey].currentStage++;
+            
+            if (studentProgress[progressKey].currentStage >= currentLevel.stages.length) {
+                studentProgress[progressKey].completed = true;
+                
+                const nextLevelKey = `niveau${currentLevel.num + 1}`;
+                if (studentProgress[nextLevelKey]) {
+                    studentProgress[nextLevelKey].locked = false;
+                }
+                
+                showTransition(true);
+            } else {
+                showTransition(false);
+            }
+            
+            saveProgress();
+        }
+
+        function showTransition(levelCompleted) {
+            const message = document.getElementById('transitionMessage');
+            const title = document.getElementById('transitionTitle');
+            const text = document.getElementById('transitionText');
+            const btn = document.getElementById('continueBtn');
+
+            if (levelCompleted) {
+                title.textContent = 'Niveau terminé !';
+                text.textContent = `Félicitations ! Tu as complété le niveau ${currentLevel.num}. ${currentLevel.num < 3 ? 'Le niveau suivant est débloqué !' : 'Tu as terminé tous les niveaux !'}`;
+                btn.onclick = backToLevels;
+            } else {
+                title.textContent = 'Étape réussie !';
+                text.textContent = `Bravo ! Passe à l'étape suivante.`;
+                btn.onclick = () => {
+                    message.classList.remove('show');
+                    setupGame();
+                    document.getElementById('gameArea').style.display = 'block';
+                };
+            }
+
+            document.getElementById('gameArea').style.display = 'none';
+            message.classList.add('show');
+        }
+
+        function playLetterSound(letter) {
+            try {
+                const audio = new Audio(`sounds/letters/${letter.toLowerCase()}.mp3`);
+                audio.volume = 0.7;
+                audio.play().catch(error => {
+                    console.log(`Son non disponible: ${letter}`, error);
+                });
+            } catch (error) {
+                console.log('Erreur son:', error);
+            }
+        }
+
+        function playWrongAnswerSound(correctLetter) {
+            try {
+                const clickAudio = new Audio('sounds/clic.mp3');
+                clickAudio.volume = 0.7;
+                clickAudio.play().catch(() => {});
+                
+                setTimeout(() => playLetterSound(correctLetter), 400);
+            } catch (error) {
+                console.log('Erreur son:', error);
+            }
+        }
+
+        function backToLevels() {
+            showLevelSelector();
+        }
+
+        function goHome() {
+            try {
+                if (document.referrer && document.referrer.includes('index')) {
+                    window.history.back();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
