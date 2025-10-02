@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory des Lettres</title>
+    <title>Quiz Reconnaissance des Lettres</title>
     <style>
         @font-face {
             font-family: 'BelleAllureGS';
@@ -25,14 +25,14 @@
 
         body {
             font-family: 'Comic Sans MS', cursive, sans-serif;
-            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
             min-height: 100vh;
             color: #2d3436;
             overflow-x: hidden;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -69,8 +69,8 @@
             font-weight: bold;
         }
 
-        .timer {
-            color: #e17055;
+        .progress {
+            color: #6c5ce7;
             font-weight: bold;
         }
 
@@ -86,31 +86,30 @@
 
         .level-buttons {
             display: flex;
-            gap: 20px;
+            gap: 30px;
             justify-content: center;
             flex-wrap: wrap;
             margin-top: 20px;
         }
 
         .level-btn {
-            background: #74b9ff;
+            background: #6c5ce7;
             color: white;
             border: none;
-            padding: 20px 30px;
+            padding: 25px 40px;
             font-size: 1.2em;
             border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-width: 200px;
+            min-width: 250px;
         }
 
-        .level-btn:hover {
+        .level-btn:hover:not(:disabled) {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(116, 185, 255, 0.4);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
         }
 
         .level-btn.easy { background: #00b894; }
-        .level-btn.medium { background: #fdcb6e; color: #2d3436; }
         .level-btn.hard { background: #e17055; }
         
         .level-btn:disabled {
@@ -131,81 +130,28 @@
             margin-bottom: 5px;
         }
 
-        /* Plateau de jeu */
-        .game-board {
+        /* Zone de jeu */
+        .game-area {
             display: none;
             background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
+            padding: 40px;
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            text-align: center;
         }
 
-        .cards-grid {
-            display: grid;
-            gap: 15px;
-            justify-content: center;
-            margin: 20px 0;
+        .question-letter {
+            font-size: 8em;
+            margin: 30px 0;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 20px;
+            border: 4px solid #6c5ce7;
+            display: inline-block;
+            min-width: 200px;
         }
 
-        /* Grilles selon le nombre de cartes */
-        .grid-18 { grid-template-columns: repeat(6, 1fr); max-width: 600px; margin: 0 auto; }
-        .grid-32 { grid-template-columns: repeat(8, 1fr); max-width: 800px; margin: 0 auto; }
-        .grid-40 { grid-template-columns: repeat(8, 1fr); max-width: 800px; margin: 0 auto; }
-
-        .memory-card {
-            aspect-ratio: 1;
-            background: #74b9ff;
-            border-radius: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5em;
-            color: white;
-            transition: all 0.3s ease;
-            user-select: none;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-            position: relative;
-            transform-style: preserve-3d;
-            min-width: 60px;
-            min-height: 60px;
-        }
-
-        .memory-card:hover:not(.flipped):not(.matched) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .memory-card.flipped {
-            background: white;
-            color: #2d3436;
-        }
-
-        .memory-card.matched {
-            background: #00b894;
-            color: white;
-            cursor: default;
-            animation: matchSuccess 0.6s ease-in-out;
-        }
-
-        .memory-card.wrong {
-            background: #e17055;
-            animation: wrongMatch 0.5s ease-in-out;
-        }
-
-        @keyframes matchSuccess {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        @keyframes wrongMatch {
-            0%, 100% { transform: scale(1); }
-            25% { transform: scale(0.95); }
-            75% { transform: scale(1.05); }
-        }
-
-        /* Styles des lettres selon l'écriture */
         .letter-majuscule {
             font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
             font-weight: bold;
@@ -221,7 +167,92 @@
             text-transform: lowercase;
         }
 
-        /* Contrôles du jeu */
+        .question-text {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            color: #2d3436;
+        }
+
+        .choices-grid {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 0 auto 30px;
+            max-width: 900px;
+        }
+
+        .choice-btn {
+            background: white;
+            border: 3px solid #6c5ce7;
+            border-radius: 15px;
+            padding: 15px 20px;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 90px;
+            min-width: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .choice-btn:hover {
+            background: #f1f2f6;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .choice-btn.correct {
+            background: #00b894;
+            border-color: #00b894;
+            color: white;
+            animation: correctAnswer 0.6s ease-in-out;
+        }
+
+        .choice-btn.wrong {
+            background: #e17055;
+            border-color: #e17055;
+            color: white;
+            animation: wrongAnswer 0.5s ease-in-out;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .choice-btn.disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        @keyframes correctAnswer {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes wrongAnswer {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(0.95); }
+            75% { transform: scale(1.05); }
+        }
+
+        /* Feedback */
+        .feedback {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 40px;
+        }
+
+        .feedback.correct {
+            color: #00b894;
+        }
+
+        .feedback.wrong {
+            color: #e17055;
+        }
+
+        /* Contrôles */
         .game-controls {
             display: flex;
             justify-content: center;
@@ -247,11 +278,37 @@
         }
 
         .btn-secondary {
-            background: #74b9ff;
+            background: #6c5ce7;
         }
 
         .btn-danger {
             background: #e17055;
+        }
+
+        .btn:disabled {
+            background: #ddd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            display: none;
+        }
+
+        .next-arrow {
+            display: none;
+            font-size: 1.2em;
+            color: #00b894;
+            cursor: pointer;
+            animation: bounce 1s infinite;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .next-arrow:hover {
+            transform: scale(1.2);
+        }
+
+        .next-arrow.visible {
+            display: block;
         }
 
         /* Écran de fin */
@@ -275,16 +332,11 @@
             50% { transform: scale(1.2); }
         }
 
-        .stats {
+        .final-stats {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
             margin: 20px 0;
-        }
-
-        .stats h3 {
-            color: #2d3436;
-            margin-bottom: 15px;
         }
 
         .stat-item {
@@ -312,25 +364,31 @@
                 align-items: center;
             }
 
-            .level-btn {
-                width: 100%;
-                max-width: 300px;
+            .question-letter {
+                font-size: 6em;
+                padding: 20px;
             }
 
-            .memory-card {
-                font-size: 2em;
+            .choices-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
 
-            .grid-18 { grid-template-columns: repeat(3, 1fr); }
-            .grid-32 { grid-template-columns: repeat(4, 1fr); }
-            .grid-40 { grid-template-columns: repeat(4, 1fr); }
+            .choice-btn {
+                font-size: 3em;
+                padding: 15px;
+                min-height: 100px;
+            }
         }
 
         @media (max-width: 480px) {
-            .memory-card {
-                font-size: 1.5em;
-                min-width: 50px;
-                min-height: 50px;
+            .question-letter {
+                font-size: 4em;
+                padding: 15px;
+            }
+
+            .choice-btn {
+                font-size: 2.5em;
+                min-height: 80px;
             }
         }
     </style>
@@ -340,76 +398,77 @@
         <!-- En-tête -->
         <div class="header">
             <div class="game-title">
-                <span>🃏</span>
-                <h1>Memory des Lettres</h1>
+                <span>❓</span>
+                <h1>Quiz Reconnaissance</h1>
             </div>
             <div class="game-info">
                 <div class="score">Score: <span id="score">0</span></div>
-                <div class="timer">Temps: <span id="timer">00:00</span></div>
+                <div class="progress">Question: <span id="currentQuestion">1</span>/<span id="totalQuestions">10</span></div>
             </div>
         </div>
 
         <!-- Sélecteur de niveau -->
         <div id="levelSelector" class="level-selector">
-            <h2>🎯 Choisis ton niveau de difficulté</h2>
+            <h2>🎯 Choisis ton niveau</h2>
             <div class="level-buttons">
                 <button class="level-btn easy" onclick="startLevel(1)" id="level1Btn">
                     <div>🟢 Niveau 1 - Facile</div>
-                    <small>Majuscules ↔ Script<br>9 lettres (18 cartes)</small>
+                    <small>Majuscules et Script<br>Lettres simples</small>
                 </button>
-                <button class="level-btn medium" onclick="startLevel(2)" id="level2Btn" disabled>
+                <button class="level-btn hard" onclick="startLevel(2)" id="level2Btn" disabled>
                     <span class="lock-icon">🔒</span>
-                    <div>🟡 Niveau 2 - Moyen</div>
-                    <small>Majuscules ↔ Script<br>16 lettres (32 cartes)</small>
-                </button>
-                <button class="level-btn hard" onclick="startLevel(3)" id="level3Btn" disabled>
-                    <span class="lock-icon">🔒</span>
-                    <div>🔴 Niveau 3 - Difficile</div>
-                    <small>Script ↔ Cursives<br>20 lettres (40 cartes)</small>
+                    <div>🔴 Niveau 2 - Difficile</div>
+                    <small>3 écritures + lettres pièges<br>Défi expert !</small>
                 </button>
             </div>
         </div>
 
-        <!-- Plateau de jeu -->
-        <div id="gameBoard" class="game-board">
-            <div id="cardsGrid" class="cards-grid"></div>
+        <!-- Zone de jeu -->
+        <div id="gameArea" class="game-area">
+            <div class="question-text" id="questionText">Trouve la même lettre :</div>
+            <div class="question-letter" id="questionLetter"></div>
+            <div class="choices-grid" id="choicesGrid"></div>
+            <div class="next-arrow" id="nextArrow" onclick="nextQuestion()">
+              Question suivante ➡️
+            </div>
+            <div class="feedback" id="feedback"></div>
+            
             <div class="game-controls">
-                <button class="btn" onclick="restartGame()">🔄 Recommencer</button>
-                <button class="btn btn-secondary" onclick="backToLevels()">📋 Changer de niveau</button>
-                <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+                <button class="btn btn-secondary" onclick="backToLevels()">🔄 Changer niveau</button>
+               <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
             </div>
         </div>
 
         <!-- Écran de fin -->
         <div id="gameOver" class="game-over">
             <div class="victory-animation">🎉</div>
-            <h2>Félicitations !</h2>
-            <p>Tu as terminé le Memory des lettres !</p>
+            <h2>Quiz terminé !</h2>
+            <p>Bravo pour ton travail !</p>
             
-            <div class="stats">
+            <div class="final-stats">
                 <h3>📊 Tes résultats</h3>
                 <div class="stat-item">
-                    <span>Temps total:</span>
-                    <span id="finalTime">00:00</span>
+                    <span>Questions réussies :</span>
+                    <span id="finalCorrect">0</span>
                 </div>
                 <div class="stat-item">
-                    <span>Nombre de tentatives:</span>
-                    <span id="finalAttempts">0</span>
+                    <span>Questions totales :</span>
+                    <span id="finalTotal">0</span>
                 </div>
                 <div class="stat-item">
-                    <span>Paires trouvées:</span>
-                    <span id="finalPairs">0</span>
+                    <span>Pourcentage :</span>
+                    <span id="finalPercent">0%</span>
                 </div>
                 <div class="stat-item">
-                    <span>Score final:</span>
+                    <span>Score final :</span>
                     <span id="finalScore">0</span>
                 </div>
             </div>
 
             <div class="game-controls">
-                <button class="btn" onclick="restartGame()">🔄 Rejouer</button>
+                <button class="btn" onclick="restartQuiz()">🔄 Recommencer</button>
                 <button class="btn btn-secondary" onclick="backToLevels()">📋 Autres niveaux</button>
-                <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+               <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
             </div>
         </div>
     </div>
@@ -419,35 +478,40 @@
         const LEVELS = {
             1: {
                 name: "Facile",
-                letters: ['a', 'b', 'd', 'e', 'f', 'i', 'l', 'm', 'n'],
                 writings: ['majuscule', 'script'],
-                gridClass: 'grid-18'
+                letters: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v'],
+                questionsCount: 10,
+                choicesCount: 4,
+                trapLetters: []
             },
             2: {
-                name: "Moyen", 
-                letters: ['a', 'b', 'd', 'p', 'q', 'f', 'g', 'h', 'i', 'j', 'l', 'm', 'n', 'r', 't', 'u'],
-                writings: ['majuscule', 'script'],
-                gridClass: 'grid-32'
-            },
-            3: {
                 name: "Difficile",
-                letters: ['a', 'b', 'd', 'e', 'f', 'g', 'i', 'j', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'v'],
-                writings: ['script', 'cursive'],
-                gridClass: 'grid-40'
+                writings: ['majuscule', 'script', 'cursive'],
+                letters: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v'],
+                questionsCount: 15,
+                choicesCount: 6,
+                trapLetters: {
+                    'b': ['d', 'p', 'q'],
+                    'd': ['b', 'p', 'q'],
+                    'p': ['b', 'd', 'q'],
+                    'q': ['b', 'd', 'p'],
+                    'm': ['n', 'w'],
+                    'n': ['m', 'u'],
+                    'u': ['n', 'v'],
+                    'v': ['u', 'w'],
+                    'w': ['m', 'v']
+                }
             }
         };
 
         // Variables du jeu
         let currentLevel = null;
         let currentLevelNumber = null;
-        let gameCards = [];
-        let flippedCards = [];
-        let matchedPairs = 0;
-        let attempts = 0;
+        let currentQuestionIndex = 0;
         let score = 0;
-        let startTime = null;
-        let timerInterval = null;
-        let isProcessing = false;
+        let correctAnswers = 0;
+        let questions = [];
+        let isAnswering = false;
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
@@ -457,14 +521,14 @@
 
         function showLevelSelector() {
             document.getElementById('levelSelector').style.display = 'block';
-            document.getElementById('gameBoard').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
-            resetGame();
+            resetQuiz();
             updateLevelButtons();
         }
         
         function updateLevelButtons() {
-            const progress = getMemoryProgress();
+            const progress = getQuizProgress();
             
             // Niveau 1 toujours débloqué
             document.getElementById('level1Btn').disabled = false;
@@ -483,38 +547,21 @@
                     level2Btn.insertBefore(lockIcon, level2Btn.firstChild);
                 }
             }
-            
-            // Niveau 3 débloqué si niveau 2 complété
-            const level3Btn = document.getElementById('level3Btn');
-            if (progress.level2Completed) {
-                level3Btn.disabled = false;
-                level3Btn.querySelector('.lock-icon')?.remove();
-            } else {
-                level3Btn.disabled = true;
-                if (!level3Btn.querySelector('.lock-icon')) {
-                    const lockIcon = document.createElement('span');
-                    lockIcon.className = 'lock-icon';
-                    lockIcon.textContent = '🔒';
-                    level3Btn.insertBefore(lockIcon, level3Btn.firstChild);
-                }
-            }
         }
         
-        function getMemoryProgress() {
+        function getQuizProgress() {
             const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
             const currentStudentName = getCurrentStudentName();
             
             if (currentStudentName && students[currentStudentName]) {
-                const memoryStats = students[currentStudentName].resultatsParJeu.memory || {};
+                const quizStats = students[currentStudentName].resultatsParJeu.quiz || {};
                 return {
-                    level1Completed: memoryStats.level1Completed || false,
-                    level2Completed: memoryStats.level2Completed || false
+                    level1Completed: quizStats.level1Completed || false
                 };
             }
             
             return {
-                level1Completed: false,
-                level2Completed: false
+                level1Completed: false
             };
         }
 
@@ -522,85 +569,116 @@
             currentLevel = LEVELS[level];
             if (!currentLevel) return;
             
-            // Sauvegarder le numéro de niveau
             currentLevelNumber = level;
 
-            createGameCards();
-            setupGameBoard();
-            startTimer();
-            
+            generateQuestions();
+            setupQuiz();
+            showQuestion();
+
             document.getElementById('levelSelector').style.display = 'none';
-            document.getElementById('gameBoard').style.display = 'block';
+            document.getElementById('gameArea').style.display = 'block';
             document.getElementById('gameOver').style.display = 'none';
         }
 
-        function createGameCards() {
-            gameCards = [];
+        function generateQuestions() {
+            questions = [];
             const letters = currentLevel.letters;
             const writings = currentLevel.writings;
-            
-            // Créer les paires de cartes
-            letters.forEach((letter, index) => {
-                // Première carte (première écriture)
-                gameCards.push({
-                    id: `${letter}-${writings[0]}`,
-                    letter: letter,
-                    writing: writings[0],
-                    pairId: index
-                });
+
+            for (let i = 0; i < currentLevel.questionsCount; i++) {
+                const letter = letters[Math.floor(Math.random() * letters.length)];
                 
-                // Deuxième carte (deuxième écriture)
-                gameCards.push({
-                    id: `${letter}-${writings[1]}`,
+                const questionWriting = writings[Math.floor(Math.random() * writings.length)];
+                let answerWriting;
+                do {
+                    answerWriting = writings[Math.floor(Math.random() * writings.length)];
+                } while (answerWriting === questionWriting && writings.length > 1);
+
+                const choices = generateChoices(letter, answerWriting);
+
+                questions.push({
                     letter: letter,
-                    writing: writings[1],
-                    pairId: index
+                    questionWriting: questionWriting,
+                    answerWriting: answerWriting,
+                    choices: choices,
+                    correctAnswer: letter
                 });
-            });
+            }
+        }
+
+        function generateChoices(correctLetter, writing) {
+            const choices = [correctLetter];
+            const availableLetters = currentLevel.letters.filter(l => l !== correctLetter);
             
-            // Mélanger les cartes
-            shuffleArray(gameCards);
+            if (currentLevel.trapLetters[correctLetter]) {
+                const traps = currentLevel.trapLetters[correctLetter];
+                traps.forEach(trap => {
+                    if (choices.length < currentLevel.choicesCount && availableLetters.includes(trap)) {
+                        choices.push(trap);
+                        availableLetters.splice(availableLetters.indexOf(trap), 1);
+                    }
+                });
+            }
+
+            while (choices.length < currentLevel.choicesCount) {
+                const randomLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
+                choices.push(randomLetter);
+                availableLetters.splice(availableLetters.indexOf(randomLetter), 1);
+            }
+
+            return shuffleArray(choices);
         }
 
         function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
             }
+            return newArray;
         }
 
-        function setupGameBoard() {
-            const grid = document.getElementById('cardsGrid');
-            grid.innerHTML = '';
-            grid.className = `cards-grid ${currentLevel.gridClass}`;
-            
-            gameCards.forEach((card, index) => {
-                const cardElement = document.createElement('div');
-                cardElement.className = 'memory-card';
-                cardElement.dataset.cardId = card.id;
-                cardElement.dataset.pairId = card.pairId;
-                cardElement.innerHTML = '?';
-                cardElement.addEventListener('click', () => flipCard(cardElement, card));
-                grid.appendChild(cardElement);
-            });
+        function setupQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            correctAnswers = 0;
+            isAnswering = false;
+
+            document.getElementById('score').textContent = score;
+            document.getElementById('totalQuestions').textContent = currentLevel.questionsCount;
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('nextArrow').classList.remove('visible');
         }
 
-        function flipCard(cardElement, card) {
-            if (isProcessing || cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) {
+        function showQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                endQuiz();
                 return;
             }
 
-            // Retourner la carte
-            cardElement.classList.add('flipped');
-            cardElement.innerHTML = `<span class="letter-${card.writing}">${getDisplayLetter(card.letter, card.writing)}</span>`;
-            flippedCards.push({element: cardElement, card: card});
+            const question = questions[currentQuestionIndex];
+            isAnswering = false;
 
-            // Vérifier si on a 2 cartes retournées
-            if (flippedCards.length === 2) {
-                isProcessing = true;
-                attempts++;
-                checkMatch();
-            }
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            
+            const questionLetter = document.getElementById('questionLetter');
+            questionLetter.innerHTML = `<span class="letter-${question.questionWriting}">${getDisplayLetter(question.letter, question.questionWriting)}</span>`;
+
+            const choicesGrid = document.getElementById('choicesGrid');
+            choicesGrid.innerHTML = '';
+
+            question.choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.innerHTML = `<span class="letter-${question.answerWriting}">${getDisplayLetter(choice, question.answerWriting)}</span>`;
+                button.dataset.letter = choice;
+                button.onclick = () => checkAnswer(choice, button);
+                choicesGrid.appendChild(button);
+            });
+
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('nextArrow').classList.remove('visible');
         }
 
         function getDisplayLetter(letter, writing) {
@@ -616,48 +694,64 @@
             }
         }
 
-        function checkMatch() {
-            const [first, second] = flippedCards;
-            
-            setTimeout(() => {
-                if (first.card.pairId === second.card.pairId) {
-                    // Match !
-                    first.element.classList.add('matched');
-                    second.element.classList.add('matched');
-                    matchedPairs++;
-                    score += 10;
-                    updateScore();
-                    
-                    // Prononcer la lettre trouvée
-                    playLetterSound(first.card.letter);
-                    
-                    // Vérifier si le jeu est terminé
-                    if (matchedPairs === currentLevel.letters.length) {
-                        setTimeout(() => endGame(), 500);
-                    }
-                } else {
-                    // Pas de match
-                    first.element.classList.add('wrong');
-                    second.element.classList.add('wrong');
-                    
-                    setTimeout(() => {
-                        first.element.classList.remove('flipped', 'wrong');
-                        second.element.classList.remove('flipped', 'wrong');
-                        first.element.innerHTML = '?';
-                        second.element.innerHTML = '?';
-                    }, 800);
-                }
+        function checkAnswer(selectedLetter, buttonElement) {
+            if (isAnswering) return;
+
+            const question = questions[currentQuestionIndex];
+            const isCorrect = selectedLetter === question.correctAnswer;
+            const feedback = document.getElementById('feedback');
+
+            if (isCorrect) {
+                isAnswering = true;
                 
-                flippedCards = [];
-                isProcessing = false;
-            }, 1000);
+                document.querySelectorAll('.choice-btn').forEach(btn => {
+                    btn.classList.add('disabled');
+                });
+                
+                buttonElement.classList.add('correct');
+                feedback.textContent = `✅ Correct ! C'est bien la lettre "${question.letter.toUpperCase()}"`;
+                feedback.className = 'feedback correct';
+                correctAnswers++;
+                score += 10;
+                
+                playLetterSound(question.letter);
+                
+                document.getElementById('nextArrow').classList.add('visible');
+            } else {
+                buttonElement.classList.add('wrong');
+                feedback.textContent = `❌ Ce n'est pas la bonne lettre, réessaie !`;
+                feedback.className = 'feedback wrong';
+                
+                playWrongAnswerSound(selectedLetter);
+            }
+
+            document.getElementById('score').textContent = score;
+        }
+
+        function playWrongAnswerSound(wrongLetter) {
+            try {
+                const clickAudio = new Audio('sounds/letters/clic.mp3');
+                clickAudio.volume = 0.7;
+                clickAudio.play().catch(error => {
+                    console.log('Impossible de jouer le son clic:', error);
+                });
+                
+                setTimeout(() => {
+                    const letterAudio = new Audio(`sounds/letters/${wrongLetter.toLowerCase()}.mp3`);
+                    letterAudio.volume = 0.7;
+                    letterAudio.play().catch(error => {
+                        console.log(`Impossible de jouer le son pour la lettre ${wrongLetter}:`, error);
+                    });
+                }, 2800);
+            } catch (error) {
+                console.log('Erreur lors du chargement des sons:', error);
+            }
         }
 
         function playLetterSound(letter) {
             try {
-                // Créer et jouer le son de la lettre
                 const audio = new Audio(`sounds/letters/${letter.toLowerCase()}.mp3`);
-                audio.volume = 0.7; // Volume à 70%
+                audio.volume = 0.7;
                 audio.play().catch(error => {
                     console.log(`Impossible de jouer le son pour la lettre ${letter}:`, error);
                 });
@@ -666,100 +760,64 @@
             }
         }
 
-        function startTimer() {
-            startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 1000);
+        function nextQuestion() {
+            currentQuestionIndex++;
+            showQuestion();
         }
 
-        function updateTimer() {
-            if (!startTime) return;
+        function endQuiz() {
+            const percentage = Math.round((correctAnswers / questions.length) * 100);
             
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            const minutes = Math.floor(elapsed / 60);
-            const seconds = elapsed % 60;
-            
-            document.getElementById('timer').textContent = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        function updateScore() {
-            document.getElementById('score').textContent = score;
-        }
-
-        function endGame() {
-            clearInterval(timerInterval);
-            
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            const minutes = Math.floor(elapsed / 60);
-            const seconds = elapsed % 60;
-            const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            // Calculer le score bonus basé sur le temps
-            const timeBonus = Math.max(0, 300 - elapsed); // Bonus si moins de 5 minutes
-            score += timeBonus;
-            
-            // Afficher les résultats
-            document.getElementById('finalTime').textContent = timeStr;
-            document.getElementById('finalAttempts').textContent = attempts;
-            document.getElementById('finalPairs').textContent = matchedPairs;
+            document.getElementById('finalCorrect').textContent = correctAnswers;
+            document.getElementById('finalTotal').textContent = questions.length;
+            document.getElementById('finalPercent').textContent = percentage + '%';
             document.getElementById('finalScore').textContent = score;
-            
-            // Sauvegarder les statistiques
-            saveGameStats(elapsed, attempts, score);
-            
-            document.getElementById('gameBoard').style.display = 'none';
+
+            saveQuizStats(correctAnswers, questions.length, score);
+
+            document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'block';
         }
 
-        function saveGameStats(timeElapsed, totalAttempts, finalScore) {
-            // Récupérer les données de l'élève actuel
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                const student = students[currentStudentName];
+        function saveQuizStats(correct, total, finalScore) {
+            try {
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const currentStudentName = getCurrentStudentName();
                 
-                // Mettre à jour les statistiques générales
-                student.statistiques.tempsTotal += timeElapsed;
-                student.statistiques.sessionsJouees++;
-                student.statistiques.lettresTravaillees = [
-                    ...new Set([...student.statistiques.lettresTravaillees, ...currentLevel.letters])
-                ];
-                
-                // Mettre à jour les résultats du memory
-                if (!student.resultatsParJeu.memory) {
-                    student.resultatsParJeu.memory = {
-                        partiesJouees: 0,
-                        meilleurScore: 0,
-                        tempsTotal: 0,
-                        moyenneTentatives: 0,
-                        level1Completed: false,
-                        level2Completed: false
-                    };
+                if (currentStudentName && students[currentStudentName]) {
+                    const student = students[currentStudentName];
+                    
+                    student.statistiques.sessionsJouees++;
+                    
+                    if (!student.resultatsParJeu.quiz) {
+                        student.resultatsParJeu.quiz = {
+                            partiesJouees: 0,
+                            meilleurScore: 0,
+                            bonnesReponses: 0,
+                            questionsTotal: 0,
+                            level1Completed: false
+                        };
+                    }
+                    
+                    const quizStats = student.resultatsParJeu.quiz;
+                    quizStats.partiesJouees++;
+                    quizStats.meilleurScore = Math.max(quizStats.meilleurScore, finalScore);
+                    quizStats.bonnesReponses += correct;
+                    quizStats.questionsTotal += total;
+                    
+                    // Marquer le niveau comme complété
+                    if (currentLevelNumber === 1) {
+                        quizStats.level1Completed = true;
+                    }
+                    
+                    localStorage.setItem('alphabet_students', JSON.stringify(students));
                 }
-                
-                const memoryStats = student.resultatsParJeu.memory;
-                memoryStats.partiesJouees++;
-                memoryStats.meilleurScore = Math.max(memoryStats.meilleurScore, finalScore);
-                memoryStats.tempsTotal += timeElapsed;
-                memoryStats.moyenneTentatives = Math.round(
-                    (memoryStats.moyenneTentatives * (memoryStats.partiesJouees - 1) + totalAttempts) / memoryStats.partiesJouees
-                );
-                
-                // Marquer le niveau comme complété
-                if (currentLevelNumber === 1) {
-                    memoryStats.level1Completed = true;
-                } else if (currentLevelNumber === 2) {
-                    memoryStats.level2Completed = true;
-                }
-                
-                // Sauvegarder
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            } catch (error) {
+                console.log('Erreur lors de la sauvegarde:', error);
             }
         }
 
         function getCurrentStudentName() {
-            // Récupérer l'élève depuis sessionStorage (passé par l'interface principale)
             try {
                 const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
                 return currentStudent ? currentStudent.nom : null;
@@ -769,30 +827,23 @@
             }
         }
 
-        function resetGame() {
+        function resetQuiz() {
             currentLevel = null;
-            gameCards = [];
-            flippedCards = [];
-            matchedPairs = 0;
-            attempts = 0;
+            currentLevelNumber = null;
+            currentQuestionIndex = 0;
             score = 0;
-            startTime = null;
-            isProcessing = false;
-            
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            
-            document.getElementById('score').textContent = '0';
-            document.getElementById('timer').textContent = '00:00';
+            correctAnswers = 0;
+            questions = [];
+            isAnswering = false;
         }
 
-        function restartGame() {
+        function restartQuiz() {
             if (currentLevel) {
-                resetGame();
-                const levelNumber = Object.keys(LEVELS).find(key => LEVELS[key] === currentLevel);
-                startLevel(parseInt(levelNumber));
+                generateQuestions();
+                setupQuiz();
+                showQuestion();
+                document.getElementById('gameOver').style.display = 'none';
+                document.getElementById('gameArea').style.display = 'block';
             }
         }
 
@@ -801,19 +852,8 @@
         }
 
         function goHome() {
-            // Retour au menu principal de l'application
-            try {
-                // Essayer d'utiliser l'historique du navigateur
-                if (document.referrer && document.referrer.includes('index')) {
-                    window.history.back();
-                } else {
-                    // Sinon rediriger vers index.html
-                    window.location.href = 'index.html';
-                }
-            } catch (error) {
-                // En cas d'erreur, redirection directe
-                window.location.href = 'index.html';
-            }
+            // Toujours rediriger vers index.html (menu des jeux)
+            window.location.href = 'index.html';
         }
     </script>
 </body>
