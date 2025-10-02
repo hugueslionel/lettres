@@ -112,6 +112,24 @@
         .level-btn.easy { background: #00b894; }
         .level-btn.medium { background: #fdcb6e; color: #2d3436; }
         .level-btn.hard { background: #e17055; }
+        
+        .level-btn:disabled {
+            background: #b2bec3;
+            color: #636e72;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .level-btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .lock-icon {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 5px;
+        }
 
         /* Plateau de jeu */
         .game-board {
@@ -162,7 +180,6 @@
         .memory-card.flipped {
             background: white;
             color: #2d3436;
-            /* Supprimé transform: rotateY(180deg) qui causait l'inversion */
         }
 
         .memory-card.matched {
@@ -336,15 +353,17 @@
         <div id="levelSelector" class="level-selector">
             <h2>🎯 Choisis ton niveau de difficulté</h2>
             <div class="level-buttons">
-                <button class="level-btn easy" onclick="startLevel(1)">
+                <button class="level-btn easy" onclick="startLevel(1)" id="level1Btn">
                     <div>🟢 Niveau 1 - Facile</div>
                     <small>Majuscules ↔ Script<br>9 lettres (18 cartes)</small>
                 </button>
-                <button class="level-btn medium" onclick="startLevel(2)">
+                <button class="level-btn medium" onclick="startLevel(2)" id="level2Btn" disabled>
+                    <span class="lock-icon">🔒</span>
                     <div>🟡 Niveau 2 - Moyen</div>
                     <small>Majuscules ↔ Script<br>16 lettres (32 cartes)</small>
                 </button>
-                <button class="level-btn hard" onclick="startLevel(3)">
+                <button class="level-btn hard" onclick="startLevel(3)" id="level3Btn" disabled>
+                    <span class="lock-icon">🔒</span>
                     <div>🔴 Niveau 3 - Difficile</div>
                     <small>Script ↔ Cursives<br>20 lettres (40 cartes)</small>
                 </button>
@@ -406,7 +425,7 @@
             },
             2: {
                 name: "Moyen", 
-                letters: ['a', 'b', 'd', 'p', 'q', 'f', 'g', 'h', 'i', 'j', 'l', 'm', 'n', 'r', 't', 'u', 'v'],
+                letters: ['a', 'b', 'd', 'p', 'q', 'f', 'g', 'h', 'i', 'j', 'l', 'm', 'n', 'r', 't', 'u'],
                 writings: ['majuscule', 'script'],
                 gridClass: 'grid-32'
             },
@@ -420,6 +439,7 @@
 
         // Variables du jeu
         let currentLevel = null;
+        let currentLevelNumber = null;
         let gameCards = [];
         let flippedCards = [];
         let matchedPairs = 0;
@@ -432,6 +452,7 @@
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
             showLevelSelector();
+            updateLevelButtons();
         });
 
         function showLevelSelector() {
@@ -439,11 +460,70 @@
             document.getElementById('gameBoard').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
             resetGame();
+            updateLevelButtons();
+        }
+        
+        function updateLevelButtons() {
+            const progress = getMemoryProgress();
+            
+            // Niveau 1 toujours débloqué
+            document.getElementById('level1Btn').disabled = false;
+            
+            // Niveau 2 débloqué si niveau 1 complété
+            const level2Btn = document.getElementById('level2Btn');
+            if (progress.level1Completed) {
+                level2Btn.disabled = false;
+                level2Btn.querySelector('.lock-icon')?.remove();
+            } else {
+                level2Btn.disabled = true;
+                if (!level2Btn.querySelector('.lock-icon')) {
+                    const lockIcon = document.createElement('span');
+                    lockIcon.className = 'lock-icon';
+                    lockIcon.textContent = '🔒';
+                    level2Btn.insertBefore(lockIcon, level2Btn.firstChild);
+                }
+            }
+            
+            // Niveau 3 débloqué si niveau 2 complété
+            const level3Btn = document.getElementById('level3Btn');
+            if (progress.level2Completed) {
+                level3Btn.disabled = false;
+                level3Btn.querySelector('.lock-icon')?.remove();
+            } else {
+                level3Btn.disabled = true;
+                if (!level3Btn.querySelector('.lock-icon')) {
+                    const lockIcon = document.createElement('span');
+                    lockIcon.className = 'lock-icon';
+                    lockIcon.textContent = '🔒';
+                    level3Btn.insertBefore(lockIcon, level3Btn.firstChild);
+                }
+            }
+        }
+        
+        function getMemoryProgress() {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                const memoryStats = students[currentStudentName].resultatsParJeu.memory || {};
+                return {
+                    level1Completed: memoryStats.level1Completed || false,
+                    level2Completed: memoryStats.level2Completed || false
+                };
+            }
+            
+            return {
+                level1Completed: false,
+                level2Completed: false
+            };
         }
 
         function startLevel(level) {
             currentLevel = LEVELS[level];
             if (!currentLevel) return;
+            
+            // Sauvegarder le numéro de niveau
+            currentLevelNumber = level;
 
             createGameCards();
             setupGameBoard();
@@ -580,7 +660,6 @@
                 audio.volume = 0.7; // Volume à 70%
                 audio.play().catch(error => {
                     console.log(`Impossible de jouer le son pour la lettre ${letter}:`, error);
-                    // Pas d'alerte pour ne pas perturber le jeu
                 });
             } catch (error) {
                 console.log(`Erreur lors du chargement du son pour la lettre ${letter}:`, error);
@@ -653,7 +732,9 @@
                         partiesJouees: 0,
                         meilleurScore: 0,
                         tempsTotal: 0,
-                        moyenneTentatives: 0
+                        moyenneTentatives: 0,
+                        level1Completed: false,
+                        level2Completed: false
                     };
                 }
                 
@@ -664,6 +745,13 @@
                 memoryStats.moyenneTentatives = Math.round(
                     (memoryStats.moyenneTentatives * (memoryStats.partiesJouees - 1) + totalAttempts) / memoryStats.partiesJouees
                 );
+                
+                // Marquer le niveau comme complété
+                if (currentLevelNumber === 1) {
+                    memoryStats.level1Completed = true;
+                } else if (currentLevelNumber === 2) {
+                    memoryStats.level2Completed = true;
+                }
                 
                 // Sauvegarder
                 localStorage.setItem('alphabet_students', JSON.stringify(students));
