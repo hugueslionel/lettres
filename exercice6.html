@@ -823,6 +823,17 @@
                 window.location.href = 'index.html';
             }
         }
+         // Initialisation
+            document.addEventListener('DOMContentLoaded', function() {
+                loadStudents();
+
+                // ✅ Ajout : si un élève est en session, on le recharge et on affiche directement le menu des jeux
+                const savedStudent = sessionStorage.getItem('currentStudent');
+                if (savedStudent) {
+                    currentStudent = JSON.parse(savedStudent);
+                    showMainMenu();
+                }
+            });
     </script>
 </body>
 </html>
