@@ -99,7 +99,7 @@
             min-width: 220px;
         }
 
-        .level-btn:hover {
+        .level-btn:hover:not(:disabled) {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(253, 121, 168, 0.4);
         }
@@ -107,6 +107,24 @@
         .level-btn.easy { background: #00b894; }
         .level-btn.medium { background: #fdcb6e; color: #2d3436; }
         .level-btn.hard { background: #e17055; }
+        
+        .level-btn:disabled {
+            background: #b2bec3;
+            color: #636e72;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .level-btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .lock-icon {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 5px;
+        }
 
         /* Zone de jeu */
         .game-area {
@@ -378,15 +396,17 @@
         <div id="levelSelector" class="level-selector">
             <h2>🎯 Choisis ton niveau</h2>
             <div class="level-buttons">
-                <button class="level-btn easy" onclick="startLevel(1)">
+                <button class="level-btn easy" onclick="startLevel(1)" id="level1Btn">
                     <div>🟢 Niveau 1</div>
                     <small>Majuscules</small>
                 </button>
-                <button class="level-btn medium" onclick="startLevel(2)">
+                <button class="level-btn medium" onclick="startLevel(2)" id="level2Btn" disabled>
+                    <span class="lock-icon">🔒</span>
                     <div>🟡 Niveau 2</div>
                     <small>Script (minuscules)</small>
                 </button>
-                <button class="level-btn hard" onclick="startLevel(3)">
+                <button class="level-btn hard" onclick="startLevel(3)" id="level3Btn" disabled>
+                    <span class="lock-icon">🔒</span>
                     <div>🔴 Niveau 3</div>
                     <small>Cursives</small>
                 </button>
@@ -440,6 +460,7 @@
 
         // Variables du jeu
         let currentLevel = null;
+        let currentLevelNumber = null;
         let selectedLetter = null;
         let placedLetters = [];
         let nextSlotIndex = 0;
@@ -447,17 +468,76 @@
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
             showLevelSelector();
+            updateLevelButtons();
         });
 
         function showLevelSelector() {
             document.getElementById('levelSelector').style.display = 'block';
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
+            updateLevelButtons();
+        }
+        
+        function updateLevelButtons() {
+            const progress = getDisorderProgress();
+            
+            // Niveau 1 toujours débloqué
+            document.getElementById('level1Btn').disabled = false;
+            
+            // Niveau 2 débloqué si niveau 1 complété
+            const level2Btn = document.getElementById('level2Btn');
+            if (progress.level1Completed) {
+                level2Btn.disabled = false;
+                level2Btn.querySelector('.lock-icon')?.remove();
+            } else {
+                level2Btn.disabled = true;
+                if (!level2Btn.querySelector('.lock-icon')) {
+                    const lockIcon = document.createElement('span');
+                    lockIcon.className = 'lock-icon';
+                    lockIcon.textContent = '🔒';
+                    level2Btn.insertBefore(lockIcon, level2Btn.firstChild);
+                }
+            }
+            
+            // Niveau 3 débloqué si niveau 2 complété
+            const level3Btn = document.getElementById('level3Btn');
+            if (progress.level2Completed) {
+                level3Btn.disabled = false;
+                level3Btn.querySelector('.lock-icon')?.remove();
+            } else {
+                level3Btn.disabled = true;
+                if (!level3Btn.querySelector('.lock-icon')) {
+                    const lockIcon = document.createElement('span');
+                    lockIcon.className = 'lock-icon';
+                    lockIcon.textContent = '🔒';
+                    level3Btn.insertBefore(lockIcon, level3Btn.firstChild);
+                }
+            }
+        }
+        
+        function getDisorderProgress() {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                const disorderStats = students[currentStudentName].resultatsParJeu.disorder || {};
+                return {
+                    level1Completed: disorderStats.level1Completed || false,
+                    level2Completed: disorderStats.level2Completed || false
+                };
+            }
+            
+            return {
+                level1Completed: false,
+                level2Completed: false
+            };
         }
 
         function startLevel(level) {
             currentLevel = LEVELS[level];
             if (!currentLevel) return;
+            
+            currentLevelNumber = level;
 
             setupGame();
             
@@ -471,12 +551,8 @@
             selectedLetter = null;
             nextSlotIndex = 0;
 
-            // Créer le tableau alphabétique
             createAlphabetGrid();
-
-            // Créer la zone des lettres mélangées
             createLettersPool();
-
             updateScore();
         }
 
@@ -504,7 +580,6 @@
             const pool = document.getElementById('lettersPool');
             pool.innerHTML = '';
 
-            // Mélanger l'alphabet
             const shuffledAlphabet = shuffleArray([...ALPHABET]);
 
             shuffledAlphabet.forEach(letter => {
@@ -540,31 +615,24 @@
         }
 
         function selectLetter(letter, element) {
-            // Déselectionner la précédente
             document.querySelectorAll('.letter-item').forEach(item => {
                 item.classList.remove('selected');
             });
 
-            // Sélectionner la nouvelle
             selectedLetter = letter;
             element.classList.add('selected');
-
-            // Prononcer la lettre
             playLetterSound(letter);
         }
 
         function placeLetterInSlot(slotIndex) {
             const slot = document.querySelector(`.alphabet-slot[data-index="${slotIndex}"]`);
             
-            // Si la case est déjà remplie, prononcer la lettre
             if (placedLetters[slotIndex]) {
                 playLetterSound(placedLetters[slotIndex]);
                 return;
             }
 
-            // Si aucune lettre n'est sélectionnée
             if (!selectedLetter) {
-                // Prononcer quelle lettre doit aller ici
                 const correctLetter = ALPHABET[slotIndex];
                 playLetterSound(correctLetter);
                 return;
@@ -572,21 +640,17 @@
 
             const correctLetter = ALPHABET[slotIndex];
 
-            // Vérifier si c'est la bonne lettre
             if (selectedLetter === correctLetter) {
-                // Bonne réponse
                 slot.innerHTML = `<span class="letter-${currentLevel.writing}">${getDisplayLetter(selectedLetter)}</span>`;
                 slot.classList.add('filled');
                 placedLetters[slotIndex] = selectedLetter;
                 
-                // Désélectionner la lettre dans le pool (visuellement)
                 const selectedElement = document.querySelector(`.letter-item[data-letter="${selectedLetter}"].selected`);
                 if (selectedElement) {
                     selectedElement.style.opacity = '0.3';
                     selectedElement.style.pointerEvents = 'none';
                 }
 
-                // Prononcer la lettre
                 playLetterSound(selectedLetter);
 
                 selectedLetter = null;
@@ -597,7 +661,6 @@
                 updateScore();
                 checkWin();
             } else {
-                // Mauvaise réponse - jouer clic puis la bonne lettre
                 playWrongAnswerSound(correctLetter);
             }
         }
@@ -644,42 +707,59 @@
         }
 
         function endGame() {
-            // Sauvegarder les statistiques
             saveGameStats();
-
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'block';
         }
 
         function saveGameStats() {
             try {
-                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
-                if (!currentStudent) return;
-
                 const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-                if (!students[currentStudent.nom]) return;
-
-                const student = students[currentStudent.nom];
+                const currentStudentName = getCurrentStudentName();
                 
-                student.statistiques.sessionsJouees++;
-                student.statistiques.lettresTravaillees = [
-                    ...new Set([...student.statistiques.lettresTravaillees, ...ALPHABET])
-                ];
-                
-                if (!student.resultatsParJeu.disorder) {
-                    student.resultatsParJeu.disorder = {
-                        partiesJouees: 0,
-                        niveauxReussis: {}
-                    };
+                if (currentStudentName && students[currentStudentName]) {
+                    const student = students[currentStudentName];
+                    
+                    student.statistiques.sessionsJouees++;
+                    student.statistiques.lettresTravaillees = [
+                        ...new Set([...student.statistiques.lettresTravaillees, ...ALPHABET])
+                    ];
+                    
+                    if (!student.resultatsParJeu.disorder) {
+                        student.resultatsParJeu.disorder = {
+                            partiesJouees: 0,
+                            niveauxReussis: {},
+                            level1Completed: false,
+                            level2Completed: false
+                        };
+                    }
+                    
+                    const disorderStats = student.resultatsParJeu.disorder;
+                    disorderStats.partiesJouees++;
+                    disorderStats.niveauxReussis[currentLevel.name] = 
+                        (disorderStats.niveauxReussis[currentLevel.name] || 0) + 1;
+                    
+                    // Marquer le niveau comme complété
+                    if (currentLevelNumber === 1) {
+                        disorderStats.level1Completed = true;
+                    } else if (currentLevelNumber === 2) {
+                        disorderStats.level2Completed = true;
+                    }
+                    
+                    localStorage.setItem('alphabet_students', JSON.stringify(students));
                 }
-                
-                student.resultatsParJeu.disorder.partiesJouees++;
-                student.resultatsParJeu.disorder.niveauxReussis[currentLevel.name] = 
-                    (student.resultatsParJeu.disorder.niveauxReussis[currentLevel.name] || 0) + 1;
-                
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
             } catch (error) {
                 console.log('Erreur lors de la sauvegarde:', error);
+            }
+        }
+
+        function getCurrentStudentName() {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                return currentStudent ? currentStudent.nom : null;
+            } catch (error) {
+                console.log('Erreur lors de la récupération de l\'élève:', error);
+                return null;
             }
         }
 
