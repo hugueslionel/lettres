@@ -104,13 +104,31 @@
             min-width: 250px;
         }
 
-        .level-btn:hover {
+        .level-btn:hover:not(:disabled) {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
         }
 
         .level-btn.easy { background: #00b894; }
         .level-btn.hard { background: #e17055; }
+        
+        .level-btn:disabled {
+            background: #b2bec3;
+            color: #636e72;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .level-btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .lock-icon {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 5px;
+        }
 
         /* Zone de jeu */
         .game-area {
@@ -393,11 +411,12 @@
         <div id="levelSelector" class="level-selector">
             <h2>🎯 Choisis ton niveau</h2>
             <div class="level-buttons">
-                <button class="level-btn easy" onclick="startLevel(1)">
+                <button class="level-btn easy" onclick="startLevel(1)" id="level1Btn">
                     <div>🟢 Niveau 1 - Facile</div>
                     <small>Majuscules et Script<br>Lettres simples</small>
                 </button>
-                <button class="level-btn hard" onclick="startLevel(2)">
+                <button class="level-btn hard" onclick="startLevel(2)" id="level2Btn" disabled>
+                    <span class="lock-icon">🔒</span>
                     <div>🔴 Niveau 2 - Difficile</div>
                     <small>3 écritures + lettres pièges<br>Défi expert !</small>
                 </button>
@@ -471,7 +490,6 @@
                 letters: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v'],
                 questionsCount: 15,
                 choicesCount: 6,
-                // Lettres pièges : ressemblances visuelles
                 trapLetters: {
                     'b': ['d', 'p', 'q'],
                     'd': ['b', 'p', 'q'],
@@ -488,6 +506,7 @@
 
         // Variables du jeu
         let currentLevel = null;
+        let currentLevelNumber = null;
         let currentQuestionIndex = 0;
         let score = 0;
         let correctAnswers = 0;
@@ -497,6 +516,7 @@
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
             showLevelSelector();
+            updateLevelButtons();
         });
 
         function showLevelSelector() {
@@ -504,11 +524,52 @@
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
             resetQuiz();
+            updateLevelButtons();
+        }
+        
+        function updateLevelButtons() {
+            const progress = getQuizProgress();
+            
+            // Niveau 1 toujours débloqué
+            document.getElementById('level1Btn').disabled = false;
+            
+            // Niveau 2 débloqué si niveau 1 complété
+            const level2Btn = document.getElementById('level2Btn');
+            if (progress.level1Completed) {
+                level2Btn.disabled = false;
+                level2Btn.querySelector('.lock-icon')?.remove();
+            } else {
+                level2Btn.disabled = true;
+                if (!level2Btn.querySelector('.lock-icon')) {
+                    const lockIcon = document.createElement('span');
+                    lockIcon.className = 'lock-icon';
+                    lockIcon.textContent = '🔒';
+                    level2Btn.insertBefore(lockIcon, level2Btn.firstChild);
+                }
+            }
+        }
+        
+        function getQuizProgress() {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                const quizStats = students[currentStudentName].resultatsParJeu.quiz || {};
+                return {
+                    level1Completed: quizStats.level1Completed || false
+                };
+            }
+            
+            return {
+                level1Completed: false
+            };
         }
 
         function startLevel(level) {
             currentLevel = LEVELS[level];
             if (!currentLevel) return;
+            
+            currentLevelNumber = level;
 
             generateQuestions();
             setupQuiz();
@@ -525,17 +586,14 @@
             const writings = currentLevel.writings;
 
             for (let i = 0; i < currentLevel.questionsCount; i++) {
-                // Choisir une lettre aléatoire
                 const letter = letters[Math.floor(Math.random() * letters.length)];
                 
-                // Choisir l'écriture de la question et de la réponse
                 const questionWriting = writings[Math.floor(Math.random() * writings.length)];
                 let answerWriting;
                 do {
                     answerWriting = writings[Math.floor(Math.random() * writings.length)];
                 } while (answerWriting === questionWriting && writings.length > 1);
 
-                // Générer les choix
                 const choices = generateChoices(letter, answerWriting);
 
                 questions.push({
@@ -552,7 +610,6 @@
             const choices = [correctLetter];
             const availableLetters = currentLevel.letters.filter(l => l !== correctLetter);
             
-            // Pour le niveau 2, ajouter des lettres pièges en priorité
             if (currentLevel.trapLetters[correctLetter]) {
                 const traps = currentLevel.trapLetters[correctLetter];
                 traps.forEach(trap => {
@@ -563,14 +620,12 @@
                 });
             }
 
-            // Compléter avec des lettres aléatoires
             while (choices.length < currentLevel.choicesCount) {
                 const randomLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
                 choices.push(randomLetter);
                 availableLetters.splice(availableLetters.indexOf(randomLetter), 1);
             }
 
-            // Mélanger les choix
             return shuffleArray(choices);
         }
 
@@ -604,13 +659,11 @@
             const question = questions[currentQuestionIndex];
             isAnswering = false;
 
-            // Afficher la question
             document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
             
             const questionLetter = document.getElementById('questionLetter');
             questionLetter.innerHTML = `<span class="letter-${question.questionWriting}">${getDisplayLetter(question.letter, question.questionWriting)}</span>`;
 
-            // Générer les choix
             const choicesGrid = document.getElementById('choicesGrid');
             choicesGrid.innerHTML = '';
 
@@ -623,7 +676,6 @@
                 choicesGrid.appendChild(button);
             });
 
-            // Reset feedback et flèche
             document.getElementById('feedback').textContent = '';
             document.getElementById('feedback').className = 'feedback';
             document.getElementById('nextArrow').classList.remove('visible');
@@ -650,10 +702,8 @@
             const feedback = document.getElementById('feedback');
 
             if (isCorrect) {
-                // Réponse correcte
                 isAnswering = true;
                 
-                // Désactiver tous les boutons
                 document.querySelectorAll('.choice-btn').forEach(btn => {
                     btn.classList.add('disabled');
                 });
@@ -664,21 +714,15 @@
                 correctAnswers++;
                 score += 10;
                 
-                // Jouer le son de la lettre
                 playLetterSound(question.letter);
                 
-                // Afficher la flèche pour passer à la question suivante
                 document.getElementById('nextArrow').classList.add('visible');
             } else {
-                // Réponse incorrecte - on continue à chercher
                 buttonElement.classList.add('wrong');
                 feedback.textContent = `❌ Ce n'est pas la bonne lettre, réessaie !`;
                 feedback.className = 'feedback wrong';
                 
-                // Jouer le son "clic" puis la lettre fausse
                 playWrongAnswerSound(selectedLetter);
-                
-                // Le bouton reste désactivé mais les autres restent cliquables
             }
 
             document.getElementById('score').textContent = score;
@@ -686,21 +730,19 @@
 
         function playWrongAnswerSound(wrongLetter) {
             try {
-                // Jouer d'abord le son "clic"
                 const clickAudio = new Audio('sounds/letters/clic.mp3');
                 clickAudio.volume = 0.7;
                 clickAudio.play().catch(error => {
                     console.log('Impossible de jouer le son clic:', error);
                 });
                 
-                // Ensuite jouer la lettre fausse après un délai
                 setTimeout(() => {
                     const letterAudio = new Audio(`sounds/letters/${wrongLetter.toLowerCase()}.mp3`);
                     letterAudio.volume = 0.7;
                     letterAudio.play().catch(error => {
                         console.log(`Impossible de jouer le son pour la lettre ${wrongLetter}:`, error);
                     });
-                }, 2800); // Délai de 400ms entre clic et lettre
+                }, 2800);
             } catch (error) {
                 console.log('Erreur lors du chargement des sons:', error);
             }
@@ -731,7 +773,6 @@
             document.getElementById('finalPercent').textContent = percentage + '%';
             document.getElementById('finalScore').textContent = score;
 
-            // Sauvegarder les statistiques
             saveQuizStats(correctAnswers, questions.length, score);
 
             document.getElementById('gameArea').style.display = 'none';
@@ -740,41 +781,55 @@
 
         function saveQuizStats(correct, total, finalScore) {
             try {
-                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
-                if (!currentStudent) return;
-
                 const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-                if (!students[currentStudent.nom]) return;
-
-                const student = students[currentStudent.nom];
+                const currentStudentName = getCurrentStudentName();
                 
-                // Mettre à jour les statistiques générales
-                student.statistiques.sessionsJouees++;
-                
-                // Mettre à jour les résultats du quiz
-                if (!student.resultatsParJeu.quiz) {
-                    student.resultatsParJeu.quiz = {
-                        partiesJouees: 0,
-                        meilleurScore: 0,
-                        bonnesReponses: 0,
-                        questionsTotal: 0
-                    };
+                if (currentStudentName && students[currentStudentName]) {
+                    const student = students[currentStudentName];
+                    
+                    student.statistiques.sessionsJouees++;
+                    
+                    if (!student.resultatsParJeu.quiz) {
+                        student.resultatsParJeu.quiz = {
+                            partiesJouees: 0,
+                            meilleurScore: 0,
+                            bonnesReponses: 0,
+                            questionsTotal: 0,
+                            level1Completed: false
+                        };
+                    }
+                    
+                    const quizStats = student.resultatsParJeu.quiz;
+                    quizStats.partiesJouees++;
+                    quizStats.meilleurScore = Math.max(quizStats.meilleurScore, finalScore);
+                    quizStats.bonnesReponses += correct;
+                    quizStats.questionsTotal += total;
+                    
+                    // Marquer le niveau comme complété
+                    if (currentLevelNumber === 1) {
+                        quizStats.level1Completed = true;
+                    }
+                    
+                    localStorage.setItem('alphabet_students', JSON.stringify(students));
                 }
-                
-                const quizStats = student.resultatsParJeu.quiz;
-                quizStats.partiesJouees++;
-                quizStats.meilleurScore = Math.max(quizStats.meilleurScore, finalScore);
-                quizStats.bonnesReponses += correct;
-                quizStats.questionsTotal += total;
-                
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
             } catch (error) {
                 console.log('Erreur lors de la sauvegarde:', error);
             }
         }
 
+        function getCurrentStudentName() {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                return currentStudent ? currentStudent.nom : null;
+            } catch (error) {
+                console.log('Erreur lors de la récupération de l\'élève:', error);
+                return null;
+            }
+        }
+
         function resetQuiz() {
             currentLevel = null;
+            currentLevelNumber = null;
             currentQuestionIndex = 0;
             score = 0;
             correctAnswers = 0;
