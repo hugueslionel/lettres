@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tri des Lettres</title>
+    <style>
+        @font-face {
+            font-family: 'BelleAllureGS';
+            src: url('fonts/BelleAllureGS-Gros.otf') format('opentype');
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'ScriptEcole2';
+            src: url('fonts/ScriptEcole2.ttf') format('truetype');
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+            min-height: 100vh;
+            color: #2d3436;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #2d3436;
+            margin-bottom: 10px;
+        }
+
+        .instructions {
+            font-size: 1.1em;
+            color: #636e72;
+            margin-top: 10px;
+        }
+
+        .progress-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .progress-bar-container {
+            background: #dfe6e9;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00b894, #00cec9);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Zones de tri en haut */
+        .sorting-zones {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .drop-zone {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            min-height: 120px;
+        }
+
+        .drop-zone-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid #dfe6e9;
+        }
+
+        .drop-zone-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .drop-zone-count {
+            background: #dfe6e9;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .drop-zone-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 80px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 3px dashed #b2bec3;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone-content.drag-over {
+            background: #dfe6e9;
+            border-color: #6c5ce7;
+            transform: scale(1.02);
+        }
+
+        .zone-majuscules .drop-zone-title { color: #e17055; }
+        .zone-script .drop-zone-title { color: #0984e3; }
+        .zone-cursive .drop-zone-title { color: #6c5ce7; }
+        .zone-poubelle .drop-zone-title { color: #d63031; }
+
+        .zone-poubelle {
+            border: 3px solid #d63031;
+        }
+
+        .zone-poubelle .drop-zone-content {
+            background: #ffe5e5;
+            border-color: #d63031;
+        }
+
+        /* Zone des lettres à trier en bas */
+        .letters-pool {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .letters-pool h3 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #6c5ce7;
+            font-size: 1.5em;
+        }
+
+        .letters-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            min-height: 200px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 3px dashed #b2bec3;
+        }
+
+        .letter-item {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 2.5em;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .letter-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .letter-item:active {
+            cursor: grabbing;
+            opacity: 0.5;
+        }
+
+        .letter-item.dragging {
+            opacity: 0.3;
+        }
+
+        .letter-majuscule {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            font-weight: bold;
+            color: #e17055;
+        }
+
+        .letter-script {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            color: #0984e3;
+        }
+
+        .letter-cursive {
+            font-family: 'BelleAllureGS', cursive;
+            color: #6c5ce7;
+        }
+
+        .letter-intrus {
+            font-family: 'Comic Sans MS', cursive;
+            color: #d63031;
+        }
+
+        /* Contrôles */
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.4);
+        }
+
+        .btn-secondary {
+            background: #74b9ff;
+        }
+
+        .btn-danger {
+            background: #e17055;
+        }
+
+        .btn-check {
+            background: #fdcb6e;
+            color: #2d3436;
+            font-weight: bold;
+        }
+
+        .btn:disabled {
+            background: #b2bec3;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn:disabled:hover {
+            transform: none;
+        }
+
+        /* Écran de fin */
+        .game-over {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .victory-animation {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Messages de feedback */
+        .feedback-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px 50px;
+            border-radius: 15px;
+            font-size: 2em;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            display: none;
+        }
+
+        .feedback-message.success { color: #00b894; }
+        .feedback-message.error { color: #d63031; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sorting-zones {
+                grid-template-columns: 1fr;
+            }
+
+            .letter-item {
+                font-size: 2em;
+                padding: 10px 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .drop-zone-title {
+                font-size: 1.1em;
+            }
+
+            .letter-item {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="container">
+        <!-- En-tête -->
+        <div class="header">
+            <h1>🗂️ Tri des Lettres</h1>
+            <p class="instructions">Fais glisser chaque lettre dans la bonne zone selon son écriture !</p>
+            <div class="progress-info">
+                <div>Lettres triées : <span id="sortedCount">0</span> / <span id="totalCount">0</span></div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zones de tri en haut -->
+        <div class="sorting-zones">
+            <div class="drop-zone zone-majuscules" data-type="majuscule">
+                <div class="drop-zone-header">
+                    <div class="drop-zone-title">
+                        <span>🔴</span>
+                        <span class="letter-majuscule">MAJUSCULES</span>
+                    </div>
+                    <div class="drop-zone-count" id="countMajuscule">0 / 26</div>
+                </div>
+                <div class="drop-zone-content" id="zoneMajuscule"></div>
+            </div>
+
+            <div class="drop-zone zone-script" data-type="script">
+                <div class="drop-zone-header">
+                    <div class="drop-zone-title">
+                        <span>🔵</span>
+                        <span class="letter-script">script</span>
+                    </div>
+                    <div class="drop-zone-count" id="countScript">0 / 26</div>
+                </div>
+                <div class="drop-zone-content" id="zoneScript"></div>
+            </div>
+
+            <div class="drop-zone zone-cursive" data-type="cursive">
+                <div class="drop-zone-header">
+                    <div class="drop-zone-title">
+                        <span>🟣</span>
+                        <span class="letter-cursive">cursive</span>
+                    </div>
+                    <div class="drop-zone-count" id="countCursive">0 / 26</div>
+                </div>
+                <div class="drop-zone-content" id="zoneCursive"></div>
+            </div>
+
+            <div class="drop-zone zone-poubelle" data-type="poubelle">
+                <div class="drop-zone-header">
+                    <div class="drop-zone-title">
+                        <span>🗑️</span>
+                        <span>POUBELLE (intrus)</span>
+                    </div>
+                    <div class="drop-zone-count" id="countPoubelle">0</div>
+                </div>
+                <div class="drop-zone-content" id="zonePoubelle"></div>
+            </div>
+        </div>
+
+        <!-- Lettres à trier en bas -->
+        <div class="letters-pool">
+            <h3>📝 Lettres à trier <span id="remainingInfo"></span></h3>
+            <div class="letters-container" id="lettersPool"></div>
+        </div>
+
+        <!-- Contrôles -->
+        <div class="game-controls">
+            <button class="btn btn-check" onclick="checkSorting()" id="checkBtn">✓ Vérifier mon tri</button>
+            <button class="btn btn-secondary" onclick="addMoreLetters()" id="addBtn">➕ Ajouter des lettres (5)</button>
+            <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+        </div>
+    </div>
+
+    <!-- Écran de fin -->
+    <div class="game-over" id="gameOver">
+        <div class="victory-animation">🎉</div>
+        <h2>Bravo !</h2>
+        <p>Tu as bien trié toutes les lettres !</p>
+        <div style="margin: 30px 0;">
+            <p style="font-size: 1.5em; color: #00b894; font-weight: bold;">Tri réussi ! 🌟</p>
+        </div>
+        <div class="game-controls">
+            <button class="btn" onclick="resetGame()">🔄 Recommencer</button>
+            <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+        </div>
+    </div>
+
+    <!-- Message de feedback -->
+    <div class="feedback-message" id="feedbackMessage"></div>
+
+    <script>
+        const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+        
+        // Intrus : chiffres et symboles
+        const intrus = ['0', '1', '2', '3', '5', '8', '€', '§', '&', '@', '#', '%'];
+        
+        let allItems = [];
+        let visibleItems = [];
+        let sortedItems = {};
+        let draggedElement = null;
+        let startTime = null;
+        let currentIndex = 0;
+        const BATCH_SIZE = 5; // Nombre de lettres à afficher à la fois
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            initGame();
+        });
+
+        function initGame() {
+            // Charger la progression sauvegardée ou créer une nouvelle
+            loadProgress();
+            
+            // Si aucune progression, générer les lettres
+            if (allItems.length === 0) {
+                generateAllItems();
+                currentIndex = 0;
+            }
+            
+            // Afficher les premières lettres si le pool est vide
+            if (sortedItems.pool.length === 0 && currentIndex < allItems.length) {
+                addMoreLetters();
+            }
+            
+            renderLetters();
+            updateProgress();
+            updateRemainingInfo();
+            startTime = Date.now();
+        }
+
+        function generateAllItems() {
+            allItems = [];
+            
+            // Ajouter toutes les lettres en majuscules
+            alphabet.forEach(letter => {
+                allItems.push({
+                    char: letter.toUpperCase(),
+                    type: 'majuscule',
+                    id: `maj-${letter}`
+                });
+            });
+
+            // Ajouter toutes les lettres en script
+            alphabet.forEach(letter => {
+                allItems.push({
+                    char: letter.toLowerCase(),
+                    type: 'script',
+                    id: `script-${letter}`
+                });
+            });
+
+            // Ajouter toutes les lettres en cursive
+            alphabet.forEach(letter => {
+                allItems.push({
+                    char: letter.toLowerCase(),
+                    type: 'cursive',
+                    id: `cursive-${letter}`
+                });
+            });
+
+            // Ajouter les intrus
+            intrus.forEach((intru, index) => {
+                allItems.push({
+                    char: intru,
+                    type: 'intrus',
+                    id: `intrus-${index}`
+                });
+            });
+
+            // Mélanger
+            shuffleArray(allItems);
+            
+            // Initialiser les zones
+            sortedItems = {
+                pool: [],
+                majuscule: [],
+                script: [],
+                cursive: [],
+                poubelle: []
+            };
+            
+            // Sauvegarder
+            saveProgress();
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function addMoreLetters() {
+            const remaining = allItems.length - currentIndex;
+            const toAdd = Math.min(BATCH_SIZE, remaining);
+            
+            if (toAdd === 0) {
+                showFeedback('Toutes les lettres sont déjà disponibles !', 'error');
+                return;
+            }
+
+            // Ajouter les prochaines lettres au pool
+            for (let i = 0; i < toAdd; i++) {
+                const item = allItems[currentIndex];
+                sortedItems.pool.push(item.id);
+                currentIndex++;
+            }
+            
+            saveProgress();
+            renderLetters();
+            updateProgress();
+            updateRemainingInfo();
+            
+            // Désactiver le bouton si toutes les lettres sont affichées
+            if (currentIndex >= allItems.length) {
+                document.getElementById('addBtn').disabled = true;
+            }
+        }
+
+        function updateRemainingInfo() {
+            const remaining = allItems.length - currentIndex;
+            const info = document.getElementById('remainingInfo');
+            
+            if (remaining > 0) {
+                info.textContent = `(${remaining} lettres restantes)`;
+                info.style.color = '#636e72';
+            } else {
+                info.textContent = '(toutes les lettres sont là !)';
+                info.style.color = '#00b894';
+            }
+        }
+
+        function renderLetters() {
+            // Vider toutes les zones
+            document.getElementById('lettersPool').innerHTML = '';
+            document.getElementById('zoneMajuscule').innerHTML = '';
+            document.getElementById('zoneScript').innerHTML = '';
+            document.getElementById('zoneCursive').innerHTML = '';
+            document.getElementById('zonePoubelle').innerHTML = '';
+
+            // Rendre les lettres dans chaque zone
+            Object.keys(sortedItems).forEach(zone => {
+                const container = zone === 'pool' ? 
+                    document.getElementById('lettersPool') : 
+                    document.getElementById('zone' + zone.charAt(0).toUpperCase() + zone.slice(1));
+                
+                sortedItems[zone].forEach(itemId => {
+                    const item = allItems.find(i => i.id === itemId);
+                    if (item) {
+                        const letterDiv = createLetterElement(item);
+                        container.appendChild(letterDiv);
+                    }
+                });
+            });
+
+            updateCounts();
+        }
+
+        function createLetterElement(item) {
+            const div = document.createElement('div');
+            div.className = `letter-item letter-${item.type}`;
+            div.textContent = item.char;
+            div.draggable = true;
+            div.dataset.id = item.id;
+            div.dataset.type = item.type;
+
+            div.addEventListener('dragstart', handleDragStart);
+            div.addEventListener('dragend', handleDragEnd);
+
+            return div;
+        }
+
+        function handleDragStart(e) {
+            draggedElement = e.target;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.innerHTML);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        // Gestion des zones de dépôt
+        document.querySelectorAll('.drop-zone-content, .letters-container').forEach(zone => {
+            zone.addEventListener('dragover', handleDragOver);
+            zone.addEventListener('drop', handleDrop);
+            zone.addEventListener('dragleave', handleDragLeave);
+        });
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-over');
+            return false;
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            e.currentTarget.classList.remove('drag-over');
+
+            if (draggedElement) {
+                const itemId = draggedElement.dataset.id;
+                const targetZone = getZoneFromElement(e.currentTarget);
+                
+                // Retirer de l'ancienne zone
+                Object.keys(sortedItems).forEach(zone => {
+                    const index = sortedItems[zone].indexOf(itemId);
+                    if (index > -1) {
+                        sortedItems[zone].splice(index, 1);
+                    }
+                });
+
+                // Ajouter à la nouvelle zone
+                sortedItems[targetZone].push(itemId);
+
+                // Sauvegarder et rafraîchir
+                saveProgress();
+                renderLetters();
+                updateProgress();
+            }
+
+            return false;
+        }
+
+        function getZoneFromElement(element) {
+            const id = element.id;
+            if (id === 'lettersPool') return 'pool';
+            if (id === 'zoneMajuscule') return 'majuscule';
+            if (id === 'zoneScript') return 'script';
+            if (id === 'zoneCursive') return 'cursive';
+            if (id === 'zonePoubelle') return 'poubelle';
+            return 'pool';
+        }
+
+        function updateCounts() {
+            document.getElementById('countMajuscule').textContent = 
+                `${sortedItems.majuscule.length} / 26`;
+            document.getElementById('countScript').textContent = 
+                `${sortedItems.script.length} / 26`;
+            document.getElementById('countCursive').textContent = 
+                `${sortedItems.cursive.length} / 26`;
+            document.getElementById('countPoubelle').textContent = 
+                sortedItems.poubelle.length;
+        }
+
+        function updateProgress() {
+            const total = allItems.length;
+            const sorted = total - sortedItems.pool.length - (allItems.length - currentIndex);
+            const percentage = Math.round((sorted / total) * 100);
+
+            document.getElementById('sortedCount').textContent = sorted;
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('progressBar').style.width = `${percentage}%`;
+            document.getElementById('progressBar').textContent = `${percentage}%`;
+        }
+
+        function checkSorting() {
+            // Vérifier si toutes les lettres sont affichées
+            if (currentIndex < allItems.length) {
+                showFeedback('Il reste des lettres à ajouter !', 'error');
+                return;
+            }
+
+            // Vérifier si le pool est vide
+            if (sortedItems.pool.length > 0) {
+                showFeedback('Il reste des lettres à trier !', 'error');
+                return;
+            }
+
+            let errors = 0;
+            let correct = 0;
+
+            // Vérifier chaque zone
+            ['majuscule', 'script', 'cursive', 'poubelle'].forEach(zone => {
+                sortedItems[zone].forEach(itemId => {
+                    const item = allItems.find(i => i.id === itemId);
+                    if (item) {
+                        if (zone === 'poubelle') {
+                            if (item.type === 'intrus') {
+                                correct++;
+                            } else {
+                                errors++;
+                            }
+                        } else {
+                            if (item.type === zone) {
+                                correct++;
+                            } else {
+                                errors++;
+                            }
+                        }
+                    }
+                });
+            });
+
+            if (errors > 0) {
+                showFeedback(`${errors} erreur(s) ! Vérifie ton tri.`, 'error');
+            } else {
+                showFeedback('Parfait ! Tout est bien trié ! 🌟', 'success');
+                setTimeout(() => {
+                    endGame();
+                }, 1500);
+            }
+        }
+
+        function showFeedback(message, type) {
+            const feedbackDiv = document.getElementById('feedbackMessage');
+            feedbackDiv.textContent = message;
+            feedbackDiv.className = `feedback-message ${type}`;
+            feedbackDiv.style.display = 'block';
+
+            setTimeout(() => {
+                feedbackDiv.style.display = 'none';
+            }, 2000);
+        }
+
+        function endGame() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            
+            // Sauvegarder les stats
+            saveGameStats(elapsed);
+            
+            // Afficher l'écran de fin
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function saveProgress() {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                if (!students[currentStudentName].resultatsParJeu.tri) {
+                    students[currentStudentName].resultatsParJeu.tri = {};
+                }
+                
+                students[currentStudentName].resultatsParJeu.tri.progression = sortedItems;
+                students[currentStudentName].resultatsParJeu.tri.allItems = allItems;
+                students[currentStudentName].resultatsParJeu.tri.currentIndex = currentIndex;
+                
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            }
+        }
+
+        function loadProgress() {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                const triData = students[currentStudentName].resultatsParJeu.tri;
+                if (triData && triData.progression && triData.allItems) {
+                    sortedItems = triData.progression;
+                    allItems = triData.allItems;
+                    currentIndex = triData.currentIndex || 0;
+                }
+            }
+        }
+
+        function saveGameStats(timeElapsed) {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                const student = students[currentStudentName];
+                
+                student.statistiques.tempsTotal += timeElapsed;
+                student.statistiques.sessionsJouees++;
+                student.statistiques.lettresTravaillees = alphabet;
+                
+                if (!student.resultatsParJeu.tri) {
+                    student.resultatsParJeu.tri = {
+                        completions: 0,
+                        tempsTotal: 0,
+                        meilleurTemps: Infinity
+                    };
+                }
+                
+                const triStats = student.resultatsParJeu.tri;
+                triStats.completions++;
+                triStats.tempsTotal += timeElapsed;
+                triStats.meilleurTemps = Math.min(triStats.meilleurTemps, timeElapsed);
+                
+                // Réinitialiser la progression
+                delete triStats.progression;
+                delete triStats.allItems;
+                delete triStats.currentIndex;
+                
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            }
+        }
+
+        function getCurrentStudentName() {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                return currentStudent ? currentStudent.nom : null;
+            } catch (error) {
+                console.log('Erreur lors de la récupération de
