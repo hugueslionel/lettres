@@ -222,6 +222,11 @@
             color: #2d3436;
         }
 
+        .letter-item.placed {
+            font-size: 1.25em;
+            padding: 8px 12px;
+        }
+
         .letter-item:hover {
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -238,14 +243,15 @@
 
         .letter-item.error {
             animation: shake 0.5s ease;
-            border-color: #d63031;
-            background: #ffe5e5;
+            border-color: #d63031 !important;
+            background: #ffe5e5 !important;
         }
 
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
+            0%, 100% { transform: translateX(0) scale(1); }
+            25% { transform: translateX(-10px) scale(1.05); }
+            50% { transform: translateX(10px) scale(1.05); }
+            75% { transform: translateX(-10px) scale(1.05); }
         }
 
         .letter-majuscule {
@@ -419,7 +425,7 @@
             <div class="drop-zone zone-majuscules" data-type="majuscule">
                 <div class="house-roof"></div>
                 <div class="drop-zone-header">
-                    <img src="images/majuscule.jpg" alt="Majuscules" class="zone-image">
+                    <img src="image/majuscule.jpg" alt="Majuscules" class="zone-image">
                     <div class="drop-zone-title">MAJUSCULES</div>
                     <div class="drop-zone-count" id="countMajuscule">0 / 26</div>
                 </div>
@@ -429,7 +435,7 @@
             <div class="drop-zone zone-script" data-type="script">
                 <div class="house-roof"></div>
                 <div class="drop-zone-header">
-                    <img src="images/script.jpg" alt="Script" class="zone-image">
+                    <img src="image/script.jpg" alt="Script" class="zone-image">
                     <div class="drop-zone-title">script</div>
                     <div class="drop-zone-count" id="countScript">0 / 26</div>
                 </div>
@@ -439,7 +445,7 @@
             <div class="drop-zone zone-cursive" data-type="cursive">
                 <div class="house-roof"></div>
                 <div class="drop-zone-header">
-                    <img src="images/cursif.jpg" alt="Cursive" class="zone-image">
+                    <img src="image/cursif.jpg" alt="Cursive" class="zone-image">
                     <div class="drop-zone-title">cursive</div>
                     <div class="drop-zone-count" id="countCursive">0 / 26</div>
                 </div>
@@ -465,7 +471,6 @@
 
         <!-- Contrôles -->
         <div class="game-controls">
-            <button class="btn btn-check" onclick="checkSorting()">✓ Vérifier mon tri</button>
             <button class="btn btn-secondary" onclick="resetGame()">🔄 Tout remettre</button>
             <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
         </div>
@@ -603,6 +608,7 @@
             });
 
             updateCounts();
+            addPlacedClass();
         }
 
         function createLetterElement(item) {
@@ -617,6 +623,13 @@
             div.addEventListener('dragend', handleDragEnd);
 
             return div;
+        }
+
+        function addPlacedClass() {
+            // Ajouter la classe "placed" aux lettres dans les zones de tri
+            document.querySelectorAll('.drop-zone-content:not(#lettersPool) .letter-item').forEach(item => {
+                item.classList.add('placed');
+            });
         }
 
         function handleDragStart(e) {
@@ -658,8 +671,61 @@
 
             if (draggedElement) {
                 const itemId = draggedElement.dataset.id;
+                const itemType = draggedElement.dataset.type;
                 const targetZone = getZoneFromElement(e.currentTarget);
                 
+                // Vérifier si le placement est correct
+                let isCorrect = false;
+                if (targetZone === 'pool') {
+                    isCorrect = true; // Toujours OK de remettre dans le pool
+                } else if (targetZone === 'poubelle') {
+                    isCorrect = (itemType === 'intrus');
+                } else {
+                    isCorrect = (itemType === targetZone);
+                }
+
+                if (!isCorrect && targetZone !== 'pool') {
+                    // Mauvais placement : shake et retour au pool
+                    // On doit d'abord ajouter la lettre à la zone pour voir l'animation
+                    Object.keys(sortedItems).forEach(zone => {
+                        const index = sortedItems[zone].indexOf(itemId);
+                        if (index > -1) {
+                            sortedItems[zone].splice(index, 1);
+                        }
+                    });
+                    sortedItems[targetZone].push(itemId);
+                    
+                    saveProgress();
+                    renderLetters();
+                    updateProgress();
+                    
+                    // Trouver l'élément qui vient d'être ajouté et lui appliquer l'animation
+                    setTimeout(() => {
+                        const wrongElement = document.querySelector(`[data-id="${itemId}"]`);
+                        if (wrongElement) {
+                            wrongElement.classList.add('error');
+                            
+                            setTimeout(() => {
+                                // Retirer de la zone et remettre dans le pool
+                                Object.keys(sortedItems).forEach(zone => {
+                                    const index = sortedItems[zone].indexOf(itemId);
+                                    if (index > -1) {
+                                        sortedItems[zone].splice(index, 1);
+                                    }
+                                });
+                                sortedItems.pool.push(itemId);
+                                
+                                saveProgress();
+                                renderLetters();
+                                updateProgress();
+                            }, 800);
+                        }
+                    }, 50);
+                    
+                    return false;
+                }
+                
+                // Placement correct
                 // Retirer de l'ancienne zone
                 Object.keys(sortedItems).forEach(zone => {
                     const index = sortedItems[zone].indexOf(itemId);
@@ -675,6 +741,9 @@
                 saveProgress();
                 renderLetters();
                 updateProgress();
+                
+                // Vérifier si tout est trié correctement
+                checkIfComplete();
             }
 
             return false;
@@ -713,76 +782,50 @@
         }
 
         function checkSorting() {
+            // Cette fonction n'est plus utilisée mais conservée pour compatibilité
             if (sortedItems.pool.length > 0) {
                 showFeedback('Il reste des lettres à trier !', 'error');
                 return;
             }
-
-            let errors = [];
-            let correct = 0;
-
-            // Vérifier chaque zone
-            ['majuscule', 'script', 'cursive', 'poubelle'].forEach(zone => {
-                sortedItems[zone].forEach(itemId => {
-                    const item = allItems.find(i => i.id === itemId);
-                    if (item) {
-                        if (zone === 'poubelle') {
-                            if (item.type === 'intrus') {
-                                correct++;
+            checkIfComplete();
+        }
+        
+        function checkIfComplete() {
+            // Vérifier automatiquement si tout est trié correctement
+            if (sortedItems.pool.length === 0) {
+                // Tout est placé
+                let allCorrect = true;
+                
+                ['majuscule', 'script', 'cursive', 'poubelle'].forEach(zone => {
+                    sortedItems[zone].forEach(itemId => {
+                        const item = allItems.find(i => i.id === itemId);
+                        if (item) {
+                            if (zone === 'poubelle') {
+                                if (item.type !== 'intrus') {
+                                    allCorrect = false;
+                                }
                             } else {
-                                errors.push(itemId);
-                            }
-                        } else {
-                            if (item.type === zone) {
-                                correct++;
-                            } else {
-                                errors.push(itemId);
+                                if (item.type !== zone) {
+                                    allCorrect = false;
+                                }
                             }
                         }
-                    }
-                });
-            });
-
-            if (errors.length > 0) {
-                // Afficher les erreurs
-                showErrors(errors);
-                
-                // Remettre les erreurs dans le pool après un délai
-                setTimeout(() => {
-                    errors.forEach(errorId => {
-                        Object.keys(sortedItems).forEach(zone => {
-                            const index = sortedItems[zone].indexOf(errorId);
-                            if (index > -1) {
-                                sortedItems[zone].splice(index, 1);
-                            }
-                        });
-                        sortedItems.pool.push(errorId);
                     });
-                    
-                    saveProgress();
-                    renderLetters();
-                    updateProgress();
-                }, 1500);
+                });
                 
-                showFeedback(`${errors.length} erreur(s) ! Les lettres mal placées retournent en bas.`, 'error');
-            } else {
-                showFeedback('Parfait ! Tout est bien trié ! 🌟', 'success');
-                setTimeout(() => {
-                    endGame();
-                }, 1500);
+                if (allCorrect) {
+                    setTimeout(() => {
+                        showFeedback('Parfait ! Tout est bien trié ! 🌟', 'success');
+                        setTimeout(() => {
+                            endGame();
+                        }, 1500);
+                    }, 500);
+                }
             }
         }
 
         function showErrors(errorIds) {
-            errorIds.forEach(errorId => {
-                const elements = document.querySelectorAll(`[data-id="${errorId}"]`);
-                elements.forEach(el => {
-                    el.classList.add('error');
-                    setTimeout(() => {
-                        el.classList.remove('error');
-                    }, 1500);
-                });
-            });
+            // Fonction conservée pour compatibilité mais non utilisée
         }
 
         function showFeedback(message, type) {
