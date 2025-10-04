@@ -85,37 +85,58 @@
             font-weight: bold;
         }
 
-        /* Zones de tri en haut */
+        /* Zones de tri en forme de maison */
         .sorting-zones {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
         .drop-zone {
             background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
+            padding: 20px;
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-            min-height: 120px;
+            position: relative;
+            min-height: 180px;
+        }
+
+        .house-roof {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 60px solid transparent;
+            border-right: 60px solid transparent;
+            border-bottom: 40px solid rgba(255, 255, 255, 0.95);
         }
 
         .drop-zone-header {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
             border-bottom: 3px solid #dfe6e9;
+        }
+
+        .zone-image {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background: white;
+            padding: 5px;
         }
 
         .drop-zone-title {
             font-size: 1.3em;
             font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            text-align: center;
         }
 
         .drop-zone-count {
@@ -124,18 +145,20 @@
             border-radius: 20px;
             font-weight: bold;
             font-size: 0.9em;
+            margin-top: 5px;
         }
 
         .drop-zone-content {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            min-height: 80px;
-            padding: 10px;
+            min-height: 100px;
+            padding: 15px;
             background: #f8f9fa;
             border-radius: 10px;
             border: 3px dashed #b2bec3;
             transition: all 0.3s ease;
+            justify-content: center;
         }
 
         .drop-zone-content.drag-over {
@@ -196,18 +219,7 @@
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
             border: 3px solid transparent;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.5);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+            color: #2d3436;
         }
 
         .letter-item:hover {
@@ -224,25 +236,33 @@
             opacity: 0.3;
         }
 
+        .letter-item.error {
+            animation: shake 0.5s ease;
+            border-color: #d63031;
+            background: #ffe5e5;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
         .letter-majuscule {
             font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
             font-weight: bold;
-            color: #e17055;
         }
 
         .letter-script {
             font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
-            color: #0984e3;
         }
 
         .letter-cursive {
             font-family: 'BelleAllureGS', cursive;
-            color: #6c5ce7;
         }
 
         .letter-intrus {
             font-family: 'Comic Sans MS', cursive;
-            color: #d63031;
         }
 
         /* Contrôles */
@@ -282,16 +302,6 @@
             background: #fdcb6e;
             color: #2d3436;
             font-weight: bold;
-        }
-
-        .btn:disabled {
-            background: #b2bec3;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .btn:disabled:hover {
-            transform: none;
         }
 
         /* Écran de fin */
@@ -380,6 +390,11 @@
             .letter-item {
                 font-size: 1.8em;
             }
+
+            .zone-image {
+                width: 60px;
+                height: 60px;
+            }
         }
     </style>
 </head>
@@ -390,7 +405,7 @@
         <!-- En-tête -->
         <div class="header">
             <h1>🗂️ Tri des Lettres</h1>
-            <p class="instructions">Fais glisser chaque lettre dans la bonne zone selon son écriture !</p>
+            <p class="instructions">Fais glisser chaque lettre dans la bonne maison selon son écriture !</p>
             <div class="progress-info">
                 <div>Lettres triées : <span id="sortedCount">0</span> / <span id="totalCount">0</span></div>
                 <div class="progress-bar-container">
@@ -399,48 +414,44 @@
             </div>
         </div>
 
-        <!-- Zones de tri en haut -->
+        <!-- Zones de tri en forme de maisons -->
         <div class="sorting-zones">
             <div class="drop-zone zone-majuscules" data-type="majuscule">
+                <div class="house-roof"></div>
                 <div class="drop-zone-header">
-                    <div class="drop-zone-title">
-                        <span>🔴</span>
-                        <span class="letter-majuscule">MAJUSCULES</span>
-                    </div>
+                    <img src="image/majuscule.jpg" alt="Majuscules" class="zone-image">
+                    <div class="drop-zone-title">MAJUSCULES</div>
                     <div class="drop-zone-count" id="countMajuscule">0 / 26</div>
                 </div>
                 <div class="drop-zone-content" id="zoneMajuscule"></div>
             </div>
 
             <div class="drop-zone zone-script" data-type="script">
+                <div class="house-roof"></div>
                 <div class="drop-zone-header">
-                    <div class="drop-zone-title">
-                        <span>🔵</span>
-                        <span class="letter-script">script</span>
-                    </div>
+                    <img src="image/script.jpg" alt="Script" class="zone-image">
+                    <div class="drop-zone-title">script</div>
                     <div class="drop-zone-count" id="countScript">0 / 26</div>
                 </div>
                 <div class="drop-zone-content" id="zoneScript"></div>
             </div>
 
             <div class="drop-zone zone-cursive" data-type="cursive">
+                <div class="house-roof"></div>
                 <div class="drop-zone-header">
-                    <div class="drop-zone-title">
-                        <span>🟣</span>
-                        <span class="letter-cursive">cursive</span>
-                    </div>
+                    <img src="image/cursif.jpg" alt="Cursive" class="zone-image">
+                    <div class="drop-zone-title">cursive</div>
                     <div class="drop-zone-count" id="countCursive">0 / 26</div>
                 </div>
                 <div class="drop-zone-content" id="zoneCursive"></div>
             </div>
 
             <div class="drop-zone zone-poubelle" data-type="poubelle">
+                <div class="house-roof"></div>
                 <div class="drop-zone-header">
-                    <div class="drop-zone-title">
-                        <span>🗑️</span>
-                        <span>POUBELLE (intrus)</span>
-                    </div>
-                    <div class="drop-zone-count" id="countPoubelle">0</div>
+                    <div style="font-size: 3em; margin-bottom: 10px;">🗑️</div>
+                    <div class="drop-zone-title">POUBELLE</div>
+                    <div class="drop-zone-count" id="countPoubelle">0 / 10</div>
                 </div>
                 <div class="drop-zone-content" id="zonePoubelle"></div>
             </div>
@@ -448,14 +459,14 @@
 
         <!-- Lettres à trier en bas -->
         <div class="letters-pool">
-            <h3>📝 Lettres à trier <span id="remainingInfo"></span></h3>
+            <h3>📝 Lettres à trier</h3>
             <div class="letters-container" id="lettersPool"></div>
         </div>
 
         <!-- Contrôles -->
         <div class="game-controls">
-            <button class="btn btn-check" onclick="checkSorting()" id="checkBtn">✓ Vérifier mon tri</button>
-            <button class="btn btn-secondary" onclick="addMoreLetters()" id="addBtn">➕ Ajouter des lettres (5)</button>
+            <button class="btn btn-check" onclick="checkSorting()">✓ Vérifier mon tri</button>
+            <button class="btn btn-secondary" onclick="resetGame()">🔄 Tout remettre</button>
             <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
         </div>
     </div>
@@ -480,16 +491,13 @@
     <script>
         const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
         
-        // Intrus : chiffres et symboles
-        const intrus = ['0', '1', '2', '3', '5', '8', '€', '§', '&', '@', '#', '%'];
+        // 10 intrus : chiffres et symboles
+        const intrus = ['0', '1', '3', '5', '8', '€', '§', '&', '@', '%'];
         
         let allItems = [];
-        let visibleItems = [];
         let sortedItems = {};
         let draggedElement = null;
         let startTime = null;
-        let currentIndex = 0;
-        const BATCH_SIZE = 5; // Nombre de lettres à afficher à la fois
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
@@ -501,25 +509,25 @@
             loadProgress();
             
             // Si aucune progression, générer les lettres
-            if (allItems.length === 0) {
-                generateAllItems();
-                currentIndex = 0;
-            }
-            
-            // Afficher les premières lettres si le pool est vide
-            if (sortedItems.pool.length === 0 && currentIndex < allItems.length) {
-                addMoreLetters();
+            if (Object.keys(sortedItems).length === 0) {
+                generateLetters();
             }
             
             renderLetters();
             updateProgress();
-            updateRemainingInfo();
             startTime = Date.now();
         }
 
-        function generateAllItems() {
+        function generateLetters() {
             allItems = [];
-            
+            sortedItems = {
+                pool: [],
+                majuscule: [],
+                script: [],
+                cursive: [],
+                poubelle: []
+            };
+
             // Ajouter toutes les lettres en majuscules
             alphabet.forEach(letter => {
                 allItems.push({
@@ -547,7 +555,7 @@
                 });
             });
 
-            // Ajouter les intrus
+            // Ajouter les 10 intrus
             intrus.forEach((intru, index) => {
                 allItems.push({
                     char: intru,
@@ -556,17 +564,9 @@
                 });
             });
 
-            // Mélanger
+            // Mélanger et mettre dans le pool
             shuffleArray(allItems);
-            
-            // Initialiser les zones
-            sortedItems = {
-                pool: [],
-                majuscule: [],
-                script: [],
-                cursive: [],
-                poubelle: []
-            };
+            sortedItems.pool = allItems.map(item => item.id);
             
             // Sauvegarder
             saveProgress();
@@ -576,46 +576,6 @@
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-
-        function addMoreLetters() {
-            const remaining = allItems.length - currentIndex;
-            const toAdd = Math.min(BATCH_SIZE, remaining);
-            
-            if (toAdd === 0) {
-                showFeedback('Toutes les lettres sont déjà disponibles !', 'error');
-                return;
-            }
-
-            // Ajouter les prochaines lettres au pool
-            for (let i = 0; i < toAdd; i++) {
-                const item = allItems[currentIndex];
-                sortedItems.pool.push(item.id);
-                currentIndex++;
-            }
-            
-            saveProgress();
-            renderLetters();
-            updateProgress();
-            updateRemainingInfo();
-            
-            // Désactiver le bouton si toutes les lettres sont affichées
-            if (currentIndex >= allItems.length) {
-                document.getElementById('addBtn').disabled = true;
-            }
-        }
-
-        function updateRemainingInfo() {
-            const remaining = allItems.length - currentIndex;
-            const info = document.getElementById('remainingInfo');
-            
-            if (remaining > 0) {
-                info.textContent = `(${remaining} lettres restantes)`;
-                info.style.color = '#636e72';
-            } else {
-                info.textContent = '(toutes les lettres sont là !)';
-                info.style.color = '#00b894';
             }
         }
 
@@ -738,12 +698,12 @@
             document.getElementById('countCursive').textContent = 
                 `${sortedItems.cursive.length} / 26`;
             document.getElementById('countPoubelle').textContent = 
-                sortedItems.poubelle.length;
+                `${sortedItems.poubelle.length} / 10`;
         }
 
         function updateProgress() {
             const total = allItems.length;
-            const sorted = total - sortedItems.pool.length - (allItems.length - currentIndex);
+            const sorted = total - sortedItems.pool.length;
             const percentage = Math.round((sorted / total) * 100);
 
             document.getElementById('sortedCount').textContent = sorted;
@@ -753,19 +713,12 @@
         }
 
         function checkSorting() {
-            // Vérifier si toutes les lettres sont affichées
-            if (currentIndex < allItems.length) {
-                showFeedback('Il reste des lettres à ajouter !', 'error');
-                return;
-            }
-
-            // Vérifier si le pool est vide
             if (sortedItems.pool.length > 0) {
                 showFeedback('Il reste des lettres à trier !', 'error');
                 return;
             }
 
-            let errors = 0;
+            let errors = [];
             let correct = 0;
 
             // Vérifier chaque zone
@@ -777,27 +730,59 @@
                             if (item.type === 'intrus') {
                                 correct++;
                             } else {
-                                errors++;
+                                errors.push(itemId);
                             }
                         } else {
                             if (item.type === zone) {
                                 correct++;
                             } else {
-                                errors++;
+                                errors.push(itemId);
                             }
                         }
                     }
                 });
             });
 
-            if (errors > 0) {
-                showFeedback(`${errors} erreur(s) ! Vérifie ton tri.`, 'error');
+            if (errors.length > 0) {
+                // Afficher les erreurs
+                showErrors(errors);
+                
+                // Remettre les erreurs dans le pool après un délai
+                setTimeout(() => {
+                    errors.forEach(errorId => {
+                        Object.keys(sortedItems).forEach(zone => {
+                            const index = sortedItems[zone].indexOf(errorId);
+                            if (index > -1) {
+                                sortedItems[zone].splice(index, 1);
+                            }
+                        });
+                        sortedItems.pool.push(errorId);
+                    });
+                    
+                    saveProgress();
+                    renderLetters();
+                    updateProgress();
+                }, 1500);
+                
+                showFeedback(`${errors.length} erreur(s) ! Les lettres mal placées retournent en bas.`, 'error');
             } else {
                 showFeedback('Parfait ! Tout est bien trié ! 🌟', 'success');
                 setTimeout(() => {
                     endGame();
                 }, 1500);
             }
+        }
+
+        function showErrors(errorIds) {
+            errorIds.forEach(errorId => {
+                const elements = document.querySelectorAll(`[data-id="${errorId}"]`);
+                elements.forEach(el => {
+                    el.classList.add('error');
+                    setTimeout(() => {
+                        el.classList.remove('error');
+                    }, 1500);
+                });
+            });
         }
 
         function showFeedback(message, type) {
@@ -808,7 +793,7 @@
 
             setTimeout(() => {
                 feedbackDiv.style.display = 'none';
-            }, 2000);
+            }, 2500);
         }
 
         function endGame() {
@@ -833,7 +818,6 @@
                 
                 students[currentStudentName].resultatsParJeu.tri.progression = sortedItems;
                 students[currentStudentName].resultatsParJeu.tri.allItems = allItems;
-                students[currentStudentName].resultatsParJeu.tri.currentIndex = currentIndex;
                 
                 localStorage.setItem('alphabet_students', JSON.stringify(students));
             }
@@ -848,7 +832,6 @@
                 if (triData && triData.progression && triData.allItems) {
                     sortedItems = triData.progression;
                     allItems = triData.allItems;
-                    currentIndex = triData.currentIndex || 0;
                 }
             }
         }
@@ -880,7 +863,6 @@
                 // Réinitialiser la progression
                 delete triStats.progression;
                 delete triStats.allItems;
-                delete triStats.currentIndex;
                 
                 localStorage.setItem('alphabet_students', JSON.stringify(students));
             }
@@ -891,4 +873,47 @@
                 const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
                 return currentStudent ? currentStudent.nom : null;
             } catch (error) {
-                console.log('Erreur lors de la récupération de
+                console.log('Erreur lors de la récupération de l\'élève:', error);
+                return null;
+            }
+        }
+
+        function resetGame() {
+            sortedItems = {};
+            allItems = [];
+            
+            // Supprimer la progression sauvegardée
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                if (students[currentStudentName].resultatsParJeu.tri) {
+                    delete students[currentStudentName].resultatsParJeu.tri.progression;
+                    delete students[currentStudentName].resultatsParJeu.tri.allItems;
+                }
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            }
+            
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('gameOver').style.display = 'none';
+            
+            generateLetters();
+            renderLetters();
+            updateProgress();
+            startTime = Date.now();
+        }
+
+        function goHome() {
+            try {
+                if (document.referrer && document.referrer.includes('index')) {
+                    window.history.back();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
