@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemin des Lettres</title>
+    <style>
+        @font-face {
+            font-family: 'BelleAllureGS';
+            src: url('fonts/BelleAllureGS-Gros.otf') format('opentype');
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'ScriptEcole2';
+            src: url('fonts/ScriptEcole2.ttf') format('truetype');
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            min-height: 100vh;
+            color: #2d3436;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #2d3436;
+            margin-bottom: 10px;
+        }
+
+        .instructions {
+            font-size: 1.2em;
+            color: #636e72;
+            margin-top: 10px;
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #fdcb6e;
+        }
+
+        .current-letter {
+            font-size: 3em;
+            font-weight: bold;
+            color: #e17055;
+            margin: 10px 0;
+        }
+
+        .level-info {
+            background: #dfe6e9;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        /* Grille de jeu */
+        .game-board {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 5px;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: white;
+            border: 3px solid #dfe6e9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .cell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell.start {
+            background: #81ecec;
+            border-color: #00cec9;
+            font-weight: bold;
+        }
+
+        .cell.end {
+            background: #fab1a0;
+            border-color: #e17055;
+            font-weight: bold;
+        }
+
+        .cell.selected {
+            background: #ff7675;
+            border-color: #d63031;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .cell.correct {
+            background: #55efc4;
+            border-color: #00b894;
+            color: white;
+        }
+
+        .cell.wrong {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) scale(1); }
+            25% { transform: translateX(-5px) scale(1.05); }
+            50% { transform: translateX(5px) scale(1.05); }
+            75% { transform: translateX(-5px) scale(1.05); }
+        }
+
+        .letter-majuscule {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            font-weight: bold;
+        }
+
+        .letter-script {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+        }
+
+        .letter-cursive {
+            font-family: 'BelleAllureGS', cursive;
+        }
+
+        /* Contrôles */
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.4);
+        }
+
+        .btn-secondary {
+            background: #74b9ff;
+        }
+
+        .btn-danger {
+            background: #e17055;
+        }
+
+        .btn-check {
+            background: #fdcb6e;
+            color: #2d3436;
+            font-weight: bold;
+        }
+
+        /* Écran de fin */
+        .game-over {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .victory-animation {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Messages de feedback */
+        .feedback-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px 50px;
+            border-radius: 15px;
+            font-size: 2em;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            display: none;
+        }
+
+        .feedback-message.success { color: #00b894; }
+        .feedback-message.error { color: #d63031; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                max-width: 450px;
+                gap: 3px;
+            }
+
+            .cell {
+                font-size: 1.2em;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .current-letter {
+                font-size: 2em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid {
+                max-width: 350px;
+                gap: 2px;
+            }
+
+            .cell {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="container">
+        <!-- En-tête -->
+        <div class="header">
+            <h1>🔍 Chemin des Lettres</h1>
+            <div class="instructions">
+                Trouve toutes les lettres <span class="current-letter" id="currentLetter">B</span> 
+                du coin 🟦 en haut à gauche au coin 🟧 en bas à droite !
+            </div>
+            <div class="level-info">
+                Étape <span id="currentStep">1</span> sur <span id="totalSteps">7</span>
+            </div>
+        </div>
+
+        <!-- Plateau de jeu -->
+        <div class="game-board">
+            <div class="grid" id="grid"></div>
+        </div>
+
+        <!-- Contrôles -->
+        <div class="game-controls">
+            <button class="btn btn-check" onclick="checkPath()">✓ Vérifier</button>
+            <button class="btn btn-secondary" onclick="resetGrid()">🔄 Effacer</button>
+            <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+        </div>
+    </div>
+
+    <!-- Écran de fin -->
+    <div class="game-over" id="gameOver">
+        <div class="victory-animation">🎉</div>
+        <h2>Bravo !</h2>
+        <p>Tu as trouvé tous les chemins !</p>
+        <div style="margin: 30px 0;">
+            <p style="font-size: 1.5em; color: #00b894; font-weight: bold;">Exercice réussi ! 🌟</p>
+        </div>
+        <div class="game-controls">
+            <button class="btn" onclick="restartGame()">🔄 Recommencer</button>
+            <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+        </div>
+    </div>
+
+    <!-- Message de feedback -->
+    <div class="feedback-message" id="feedbackMessage"></div>
+
+    <script>
+        // Configuration des lettres à travailler
+        const LETTERS_CONFIG = [
+            { letter: 'b', name: 'B' },
+            { letter: 'd', name: 'D' },
+            { letter: 'f', name: 'F' },
+            { letter: 'g', name: 'G' },
+            { letter: 'p', name: 'P' },
+            { letter: 'q', name: 'Q' },
+            { letter: 't', name: 'T' }
+        ];
+
+        const GRID_SIZE = 9;
+        const WRITINGS = ['majuscule', 'script', 'cursive'];
+        const OTHER_LETTERS = 'acehijklmnorstuvwxyz'.split('');
+
+        let currentStepIndex = 0;
+        let grid = [];
+        let correctPath = [];
+        let selectedCells = [];
+        let startTime = null;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            initGame();
+        });
+
+        function initGame() {
+            currentStepIndex = 0;
+            startTime = Date.now();
+            loadStep();
+        }
+
+        function loadStep() {
+            if (currentStepIndex >= LETTERS_CONFIG.length) {
+                endGame();
+                return;
+            }
+
+            const config = LETTERS_CONFIG[currentStepIndex];
+            document.getElementById('currentLetter').textContent = config.name;
+            document.getElementById('currentStep').textContent = currentStepIndex + 1;
+            document.getElementById('totalSteps').textContent = LETTERS_CONFIG.length;
+
+            generateGrid(config.letter);
+            renderGrid();
+        }
+
+        function generateGrid(targetLetter) {
+            grid = [];
+            correctPath = [];
+            selectedCells = [];
+
+            // Générer un chemin aléatoire de haut-gauche à bas-droite
+            const path = generateRandomPath();
+            correctPath = path;
+
+            // Remplir la grille
+            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                const row = Math.floor(i / GRID_SIZE);
+                const col = i % GRID_SIZE;
+                const isInPath = path.some(p => p.row === row && p.col === col);
+
+                if (isInPath) {
+                    // Mettre la lettre cible avec une écriture aléatoire
+                    const writing = WRITINGS[Math.floor(Math.random() * WRITINGS.length)];
+                    grid.push({
+                        letter: getLetter(targetLetter, writing),
+                        writing: writing,
+                        isTarget: true,
+                        index: i
+                    });
+                } else {
+                    // Mettre une autre lettre
+                    const randomLetter = OTHER_LETTERS[Math.floor(Math.random() * OTHER_LETTERS.length)];
+                    const writing = WRITINGS[Math.floor(Math.random() * WRITINGS.length)];
+                    grid.push({
+                        letter: getLetter(randomLetter, writing),
+                        writing: writing,
+                        isTarget: false,
+                        index: i
+                    });
+                }
+            }
+        }
+
+        function generateRandomPath() {
+            // Générer un chemin de (0,0) à (8,8)
+            const path = [];
+            let row = 0, col = 0;
+            path.push({ row, col });
+
+            while (row < GRID_SIZE - 1 || col < GRID_SIZE - 1) {
+                const canGoDown = row < GRID_SIZE - 1;
+                const canGoRight = col < GRID_SIZE - 1;
+
+                if (canGoDown && canGoRight) {
+                    // Choisir aléatoirement entre droite et bas
+                    if (Math.random() > 0.5) {
+                        row++;
+                    } else {
+                        col++;
+                    }
+                } else if (canGoDown) {
+                    row++;
+                } else if (canGoRight) {
+                    col++;
+                }
+
+                path.push({ row, col });
+            }
+
+            return path;
+        }
+
+        function getLetter(letter, writing) {
+            switch(writing) {
+                case 'majuscule':
+                    return letter.toUpperCase();
+                case 'script':
+                    return letter.toLowerCase();
+                case 'cursive':
+                    return letter.toLowerCase();
+                default:
+                    return letter;
+            }
+        }
+
+        function renderGrid() {
+            const gridElement = document.getElementById('grid');
+            gridElement.innerHTML = '';
+
+            grid.forEach((cell, index) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.className = `cell letter-${cell.writing}`;
+                cellDiv.textContent = cell.letter;
+                cellDiv.dataset.index = index;
+
+                // Marquer le départ et l'arrivée
+                if (index === 0) {
+                    cellDiv.classList.add('start');
+                } else if (index === GRID_SIZE * GRID_SIZE - 1) {
+                    cellDiv.classList.add('end');
+                }
+
+                cellDiv.addEventListener('click', () => toggleCell(index));
+                gridElement.appendChild(cellDiv);
+            });
+        }
+
+        function toggleCell(index) {
+            const cellIndex = selectedCells.indexOf(index);
+            const cellElement = document.querySelector(`[data-index="${index}"]`);
+
+            if (cellIndex > -1) {
+                // Désélectionner
+                selectedCells.splice(cellIndex, 1);
+                cellElement.classList.remove('selected');
+            } else {
+                // Sélectionner
+                selectedCells.push(index);
+                cellElement.classList.add('selected');
+            }
+        }
+
+        function checkPath() {
+            if (selectedCells.length === 0) {
+                showFeedback('Sélectionne des cases !', 'error');
+                return;
+            }
+
+            let allCorrect = true;
+            const correctIndices = correctPath.map(p => p.row * GRID_SIZE + p.col);
+
+            // Vérifier chaque cellule sélectionnée
+            selectedCells.forEach(index => {
+                const cellElement = document.querySelector(`[data-index="${index}"]`);
+                
+                if (correctIndices.includes(index)) {
+                    // Correct
+                    cellElement.classList.remove('selected');
+                    cellElement.classList.add('correct');
+                } else {
+                    // Incorrect
+                    allCorrect = false;
+                    cellElement.classList.add('wrong');
+                    setTimeout(() => {
+                        cellElement.classList.remove('selected', 'wrong');
+                    }, 800);
+                }
+            });
+
+            // Filtrer les cellules correctes seulement
+            selectedCells = selectedCells.filter(index => correctIndices.includes(index));
+
+            if (allCorrect && selectedCells.length === correctIndices.length) {
+                // Toutes les cases sont correctes
+                setTimeout(() => {
+                    showFeedback('Bravo ! 🌟', 'success');
+                    setTimeout(() => {
+                        currentStepIndex++;
+                        loadStep();
+                    }, 1500);
+                }, 500);
+            } else if (allCorrect) {
+                showFeedback('Continue, il en manque !', 'error');
+            } else {
+                showFeedback('Certaines cases sont fausses !', 'error');
+            }
+        }
+
+        function resetGrid() {
+            selectedCells = [];
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.remove('selected', 'correct');
+            });
+        }
+
+        function showFeedback(message, type) {
+            const feedbackDiv = document.getElementById('feedbackMessage');
+            feedbackDiv.textContent = message;
+            feedbackDiv.className = `feedback-message ${type}`;
+            feedbackDiv.style.display = 'block';
+
+            setTimeout(() => {
+                feedbackDiv.style.display = 'none';
+            }, 2000);
+        }
+
+        function endGame() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            saveGameStats(elapsed);
+            
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function saveGameStats(timeElapsed) {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                const student = students[currentStudentName];
+                
+                student.statistiques.tempsTotal += timeElapsed;
+                student.statistiques.sessionsJouees++;
+                student.statistiques.lettresTravaillees = [
+                    ...new Set([...student.statistiques.lettresTravaillees, ...LETTERS_CONFIG.map(l => l.letter)])
+                ];
+                
+                if (!student.resultatsParJeu.chemin) {
+                    student.resultatsParJeu.chemin = {
+                        completions: 0,
+                        tempsTotal: 0,
+                        meilleurTemps: Infinity
+                    };
+                }
+                
+                const cheminStats = student.resultatsParJeu.chemin;
+                cheminStats.completions++;
+                cheminStats.tempsTotal += timeElapsed;
+                cheminStats.meilleurTemps = Math.min(cheminStats.meilleurTemps, timeElapsed);
+                
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            }
+        }
+
+        function getCurrentStudentName() {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                return currentStudent ? currentStudent.nom : null;
+            } catch (error) {
+                console.log('Erreur lors de la récupération de l\'élève:', error);
+                return null;
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('gameOver').style.display = 'none';
+            initGame();
+        }
+
+        function goHome() {
+            try {
+                if (document.referrer && document.referrer.includes('index')) {
+                    window.history.back();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
