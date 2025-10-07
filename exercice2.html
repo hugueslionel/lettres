@@ -716,7 +716,10 @@
                 
                 playLetterSound(question.letter);
                 
-                document.getElementById('nextArrow').classList.add('visible');
+                // Passer automatiquement à la question suivante après le son + 1 seconde
+                setTimeout(() => {
+                    nextQuestion();
+                }, 2000); // Durée approximative du son (1s) + 1 seconde de délai
             } else {
                 buttonElement.classList.add('wrong');
                 feedback.textContent = `❌ Ce n'est pas la bonne lettre, réessaie !`;
@@ -727,7 +730,6 @@
 
             document.getElementById('score').textContent = score;
         }
-
         function playWrongAnswerSound(wrongLetter) {
             try {
                 const clickAudio = new Audio('sounds/letters/clic.mp3');
