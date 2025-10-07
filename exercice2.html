@@ -787,7 +787,7 @@
 
         function endQuiz() {
             const percentage = Math.round((correctAnswers / questions.length) * 100);
-            
+    
             document.getElementById('finalCorrect').textContent = correctAnswers;
             document.getElementById('finalTotal').textContent = questions.length;
             document.getElementById('finalPercent').textContent = percentage + '%';
@@ -797,8 +797,12 @@
 
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'block';
+    
+            // ⬇️ AJOUT ICI : Retourner automatiquement à la sélection des niveaux après 3 secondes
+            setTimeout(() => {
+                showLevelSelector();
+            }, 3000);
         }
-
         function saveQuizStats(correct, total, finalScore) {
             try {
                 const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
