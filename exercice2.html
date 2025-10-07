@@ -721,11 +721,29 @@
                     nextQuestion();
                 }, 2000); // Durée approximative du son (1s) + 1 seconde de délai
             } else {
+                // Bloquer les clics pendant la durée du son d'erreur
+                isAnswering = true;
+                
+                document.querySelectorAll('.choice-btn').forEach(btn => {
+                    btn.classList.add('disabled');
+                });
+                
                 buttonElement.classList.add('wrong');
                 feedback.textContent = `❌ Ce n'est pas la bonne lettre, réessaie !`;
                 feedback.className = 'feedback wrong';
                 
                 playWrongAnswerSound(selectedLetter);
+                
+                // Réactiver les clics après la fin du son (environ 4 secondes)
+                setTimeout(() => {
+                    isAnswering = false;
+                    document.querySelectorAll('.choice-btn').forEach(btn => {
+                        if (!btn.classList.contains('wrong')) {
+                            btn.classList.remove('disabled');
+                        }
+                    });
+                    feedback.textContent = '';
+                }, 4000); // Durée totale des sons d'erreur
             }
 
             document.getElementById('score').textContent = score;
