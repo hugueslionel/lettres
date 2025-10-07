@@ -1,4 +1,700 @@
-function checkAnswer(selectedLetter, buttonElement) {
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Reconnaissance des Lettres</title>
+    <style>
+        @font-face {
+            font-family: 'BelleAllureGS';
+            src: url('fonts/BelleAllureGS-Gros.otf') format('opentype');
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'ScriptEcole2';
+            src: url('fonts/ScriptEcole2.ttf') format('truetype');
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            min-height: 100vh;
+            color: #2d3436;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .game-title h1 {
+            font-size: 2em;
+            color: #2d3436;
+        }
+
+        .game-info {
+            text-align: right;
+            font-size: 1.1em;
+        }
+
+        .score {
+            color: #00b894;
+            font-weight: bold;
+        }
+
+        .progress {
+            color: #6c5ce7;
+            font-weight: bold;
+        }
+
+        /* Sélection du niveau */
+        .level-selector {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .level-buttons {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .level-btn {
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 25px 40px;
+            font-size: 1.2em;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 250px;
+        }
+
+        .level-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+        }
+
+        .level-btn.easy { background: #00b894; }
+        .level-btn.hard { background: #e17055; }
+        
+        .level-btn:disabled {
+            background: #b2bec3;
+            color: #636e72;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .level-btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .lock-icon {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Zone de jeu */
+        .game-area {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .question-letter {
+            font-size: 8em;
+            margin: 30px 0;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 20px;
+            border: 4px solid #6c5ce7;
+            display: inline-block;
+            min-width: 200px;
+        }
+
+        .letter-majuscule {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            font-weight: bold;
+        }
+
+        .letter-script {
+            font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
+            text-transform: lowercase;
+        }
+
+        .letter-cursive {
+            font-family: 'BelleAllureGS', cursive;
+            text-transform: lowercase;
+        }
+
+        .question-text {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            color: #2d3436;
+        }
+
+        .choices-grid {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 0 auto 30px;
+            max-width: 900px;
+        }
+
+        .choice-btn {
+            background: white;
+            border: 3px solid #6c5ce7;
+            border-radius: 15px;
+            padding: 15px 20px;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 90px;
+            min-width: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .choice-btn:hover {
+            background: #f1f2f6;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .choice-btn.correct {
+            background: #00b894;
+            border-color: #00b894;
+            color: white;
+            animation: correctAnswer 0.6s ease-in-out;
+        }
+
+        .choice-btn.wrong {
+            background: #e17055;
+            border-color: #e17055;
+            color: white;
+            animation: wrongAnswer 0.5s ease-in-out;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .choice-btn.disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        @keyframes correctAnswer {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes wrongAnswer {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(0.95); }
+            75% { transform: scale(1.05); }
+        }
+
+        /* Feedback */
+        .feedback {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 40px;
+        }
+
+        .feedback.correct {
+            color: #00b894;
+        }
+
+        .feedback.wrong {
+            color: #e17055;
+        }
+
+        /* Contrôles */
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c5ce7;
+        }
+
+        .btn-danger {
+            background: #e17055;
+        }
+
+        .btn:disabled {
+            background: #ddd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            display: none;
+        }
+
+        .next-arrow {
+            display: none;
+            font-size: 1.2em;
+            color: #00b894;
+            cursor: pointer;
+            animation: bounce 1s infinite;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .next-arrow:hover {
+            transform: scale(1.2);
+        }
+
+        .next-arrow.visible {
+            display: block;
+        }
+
+        /* Écran de fin */
+        .game-over {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .victory-animation {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .final-stats {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .level-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .question-letter {
+                font-size: 6em;
+                padding: 20px;
+            }
+
+            .choices-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .choice-btn {
+                font-size: 3em;
+                padding: 15px;
+                min-height: 100px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .question-letter {
+                font-size: 4em;
+                padding: 15px;
+            }
+
+            .choice-btn {
+                font-size: 2.5em;
+                min-height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <div class="header">
+            <div class="game-title">
+                <span>❓</span>
+                <h1>Quiz Reconnaissance</h1>
+            </div>
+            <div class="game-info">
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="progress">Question: <span id="currentQuestion">1</span>/<span id="totalQuestions">10</span></div>
+            </div>
+        </div>
+
+        <!-- Sélecteur de niveau -->
+        <div id="levelSelector" class="level-selector">
+            <h2>🎯 Choisis ton niveau</h2>
+            <div class="level-buttons">
+                <button class="level-btn easy" onclick="startLevel(1)" id="level1Btn">
+                    <div>🟢 Niveau 1 - Facile</div>
+                    <small>Majuscules et Script<br>Lettres simples</small>
+                </button>
+                <button class="level-btn hard" onclick="startLevel(2)" id="level2Btn" disabled>
+                    <span class="lock-icon">🔒</span>
+                    <div>🔴 Niveau 2 - Difficile</div>
+                    <small>3 écritures + lettres pièges<br>Défi expert !</small>
+                </button>
+            </div>
+        </div>
+
+        <!-- Zone de jeu -->
+        <div id="gameArea" class="game-area">
+            <div class="question-text" id="questionText">Trouve la même lettre :</div>
+            <div class="question-letter" id="questionLetter"></div>
+            <div class="choices-grid" id="choicesGrid"></div>
+            <div class="next-arrow" id="nextArrow" onclick="nextQuestion()">
+              Question suivante ➡️
+            </div>
+            <div class="feedback" id="feedback"></div>
+            
+            <div class="game-controls">
+                <button class="btn btn-secondary" onclick="backToLevels()">🔄 Changer niveau</button>
+               <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+            </div>
+        </div>
+
+        <!-- Écran de fin -->
+        <div id="gameOver" class="game-over">
+            <div class="victory-animation">🎉</div>
+            <h2>Quiz terminé !</h2>
+            <p>Bravo pour ton travail !</p>
+            
+            <div class="final-stats">
+                <h3>📊 Tes résultats</h3>
+                <div class="stat-item">
+                    <span>Questions réussies :</span>
+                    <span id="finalCorrect">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Questions totales :</span>
+                    <span id="finalTotal">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Pourcentage :</span>
+                    <span id="finalPercent">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span>Score final :</span>
+                    <span id="finalScore">0</span>
+                </div>
+            </div>
+
+            <div class="game-controls">
+                <button class="btn" onclick="restartQuiz()">🔄 Recommencer</button>
+                <button class="btn btn-secondary" onclick="backToLevels()">📋 Autres niveaux</button>
+               <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration des niveaux
+        const LEVELS = {
+            1: {
+                name: "Facile",
+                writings: ['majuscule', 'script'],
+                letters: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v'],
+                questionsCount: 10,
+                choicesCount: 4,
+                trapLetters: []
+            },
+            2: {
+                name: "Difficile",
+                writings: ['majuscule', 'script', 'cursive'],
+                letters: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v'],
+                questionsCount: 15,
+                choicesCount: 6,
+                trapLetters: {
+                    'b': ['d', 'p', 'q'],
+                    'd': ['b', 'p', 'q'],
+                    'p': ['b', 'd', 'q'],
+                    'q': ['b', 'd', 'p'],
+                    'm': ['n', 'w'],
+                    'n': ['m', 'u'],
+                    'u': ['n', 'v'],
+                    'v': ['u', 'w'],
+                    'w': ['m', 'v']
+                }
+            }
+        };
+
+        // Variables du jeu
+        let currentLevel = null;
+        let currentLevelNumber = null;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let correctAnswers = 0;
+        let questions = [];
+        let isAnswering = false;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            showLevelSelector();
+            updateLevelButtons();
+        });
+
+        function showLevelSelector() {
+            document.getElementById('levelSelector').style.display = 'block';
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            resetQuiz();
+            updateLevelButtons();
+        }
+        
+        function updateLevelButtons() {
+            const progress = getQuizProgress();
+            
+            // Niveau 1 toujours débloqué
+            document.getElementById('level1Btn').disabled = false;
+            
+            // Niveau 2 débloqué si niveau 1 complété
+            const level2Btn = document.getElementById('level2Btn');
+            if (progress.level1Completed) {
+                level2Btn.disabled = false;
+                level2Btn.querySelector('.lock-icon')?.remove();
+            } else {
+                level2Btn.disabled = true;
+                if (!level2Btn.querySelector('.lock-icon')) {
+                    const lockIcon = document.createElement('span');
+                    lockIcon.className = 'lock-icon';
+                    lockIcon.textContent = '🔒';
+                    level2Btn.insertBefore(lockIcon, level2Btn.firstChild);
+                }
+            }
+        }
+        
+        function getQuizProgress() {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+            
+            if (currentStudentName && students[currentStudentName]) {
+                const quizStats = students[currentStudentName].resultatsParJeu.quiz || {};
+                return {
+                    level1Completed: quizStats.level1Completed || false
+                };
+            }
+            
+            return {
+                level1Completed: false
+            };
+        }
+
+        function startLevel(level) {
+            currentLevel = LEVELS[level];
+            if (!currentLevel) return;
+            
+            currentLevelNumber = level;
+
+            generateQuestions();
+            setupQuiz();
+            showQuestion();
+
+            document.getElementById('levelSelector').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function generateQuestions() {
+            questions = [];
+            const letters = currentLevel.letters;
+            const writings = currentLevel.writings;
+
+            for (let i = 0; i < currentLevel.questionsCount; i++) {
+                const letter = letters[Math.floor(Math.random() * letters.length)];
+                
+                const questionWriting = writings[Math.floor(Math.random() * writings.length)];
+                let answerWriting;
+                do {
+                    answerWriting = writings[Math.floor(Math.random() * writings.length)];
+                } while (answerWriting === questionWriting && writings.length > 1);
+
+                const choices = generateChoices(letter, answerWriting);
+
+                questions.push({
+                    letter: letter,
+                    questionWriting: questionWriting,
+                    answerWriting: answerWriting,
+                    choices: choices,
+                    correctAnswer: letter
+                });
+            }
+        }
+
+        function generateChoices(correctLetter, writing) {
+            const choices = [correctLetter];
+            const availableLetters = currentLevel.letters.filter(l => l !== correctLetter);
+            
+            if (currentLevel.trapLetters[correctLetter]) {
+                const traps = currentLevel.trapLetters[correctLetter];
+                traps.forEach(trap => {
+                    if (choices.length < currentLevel.choicesCount && availableLetters.includes(trap)) {
+                        choices.push(trap);
+                        availableLetters.splice(availableLetters.indexOf(trap), 1);
+                    }
+                });
+            }
+
+            while (choices.length < currentLevel.choicesCount) {
+                const randomLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
+                choices.push(randomLetter);
+                availableLetters.splice(availableLetters.indexOf(randomLetter), 1);
+            }
+
+            return shuffleArray(choices);
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function setupQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            correctAnswers = 0;
+            isAnswering = false;
+
+            document.getElementById('score').textContent = score;
+            document.getElementById('totalQuestions').textContent = currentLevel.questionsCount;
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('nextArrow').classList.remove('visible');
+        }
+
+        function showQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                endQuiz();
+                return;
+            }
+
+            const question = questions[currentQuestionIndex];
+            isAnswering = false;
+
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            
+            const questionLetter = document.getElementById('questionLetter');
+            questionLetter.innerHTML = `<span class="letter-${question.questionWriting}">${getDisplayLetter(question.letter, question.questionWriting)}</span>`;
+
+            const choicesGrid = document.getElementById('choicesGrid');
+            choicesGrid.innerHTML = '';
+
+            question.choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.innerHTML = `<span class="letter-${question.answerWriting}">${getDisplayLetter(choice, question.answerWriting)}</span>`;
+                button.dataset.letter = choice;
+                button.onclick = () => checkAnswer(choice, button);
+                choicesGrid.appendChild(button);
+            });
+
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('nextArrow').classList.remove('visible');
+        }
+
+        function getDisplayLetter(letter, writing) {
+            switch(writing) {
+                case 'majuscule':
+                    return letter.toUpperCase();
+                case 'script':
+                    return letter.toLowerCase();
+                case 'cursive':
+                    return letter.toLowerCase();
+                default:
+                    return letter;
+            }
+        }
+
+        function checkAnswer(selectedLetter, buttonElement) {
             if (isAnswering) return;
 
             const question = questions[currentQuestionIndex];
@@ -20,10 +716,7 @@ function checkAnswer(selectedLetter, buttonElement) {
                 
                 playLetterSound(question.letter);
                 
-                // Passer automatiquement à la question suivante après le son + 1 seconde
-                setTimeout(() => {
-                    nextQuestion();
-                }, 2000); // Durée approximative du son (1s) + 1 seconde de délai
+                document.getElementById('nextArrow').classList.add('visible');
             } else {
                 buttonElement.classList.add('wrong');
                 feedback.textContent = `❌ Ce n'est pas la bonne lettre, réessaie !`;
@@ -34,3 +727,141 @@ function checkAnswer(selectedLetter, buttonElement) {
 
             document.getElementById('score').textContent = score;
         }
+
+        function playWrongAnswerSound(wrongLetter) {
+            try {
+                const clickAudio = new Audio('sounds/letters/clic.mp3');
+                clickAudio.volume = 0.7;
+                clickAudio.play().catch(error => {
+                    console.log('Impossible de jouer le son clic:', error);
+                });
+                
+                setTimeout(() => {
+                    const letterAudio = new Audio(`sounds/letters/${wrongLetter.toLowerCase()}.mp3`);
+                    letterAudio.volume = 0.7;
+                    letterAudio.play().catch(error => {
+                        console.log(`Impossible de jouer le son pour la lettre ${wrongLetter}:`, error);
+                    });
+                }, 2800);
+            } catch (error) {
+                console.log('Erreur lors du chargement des sons:', error);
+            }
+        }
+
+        function playLetterSound(letter) {
+            try {
+                const audio = new Audio(`sounds/letters/${letter.toLowerCase()}.mp3`);
+                audio.volume = 0.7;
+                audio.play().catch(error => {
+                    console.log(`Impossible de jouer le son pour la lettre ${letter}:`, error);
+                });
+            } catch (error) {
+                console.log(`Erreur lors du chargement du son pour la lettre ${letter}:`, error);
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            showQuestion();
+        }
+
+        function endQuiz() {
+            const percentage = Math.round((correctAnswers / questions.length) * 100);
+            
+            document.getElementById('finalCorrect').textContent = correctAnswers;
+            document.getElementById('finalTotal').textContent = questions.length;
+            document.getElementById('finalPercent').textContent = percentage + '%';
+            document.getElementById('finalScore').textContent = score;
+
+            saveQuizStats(correctAnswers, questions.length, score);
+
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function saveQuizStats(correct, total, finalScore) {
+            try {
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const currentStudentName = getCurrentStudentName();
+                
+                if (currentStudentName && students[currentStudentName]) {
+                    const student = students[currentStudentName];
+                    
+                    student.statistiques.sessionsJouees++;
+                    
+                    if (!student.resultatsParJeu.quiz) {
+                        student.resultatsParJeu.quiz = {
+                            partiesJouees: 0,
+                            meilleurScore: 0,
+                            bonnesReponses: 0,
+                            questionsTotal: 0,
+                            level1Completed: false
+                        };
+                    }
+                    
+                    const quizStats = student.resultatsParJeu.quiz;
+                    quizStats.partiesJouees++;
+                    quizStats.meilleurScore = Math.max(quizStats.meilleurScore, finalScore);
+                    quizStats.bonnesReponses += correct;
+                    quizStats.questionsTotal += total;
+                    
+                    // Marquer le niveau comme complété
+                    if (currentLevelNumber === 1) {
+                        quizStats.level1Completed = true;
+                    }
+                    
+                    localStorage.setItem('alphabet_students', JSON.stringify(students));
+                }
+            } catch (error) {
+                console.log('Erreur lors de la sauvegarde:', error);
+            }
+        }
+
+        function getCurrentStudentName() {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                return currentStudent ? currentStudent.nom : null;
+            } catch (error) {
+                console.log('Erreur lors de la récupération de l\'élève:', error);
+                return null;
+            }
+        }
+
+        function resetQuiz() {
+            currentLevel = null;
+            currentLevelNumber = null;
+            currentQuestionIndex = 0;
+            score = 0;
+            correctAnswers = 0;
+            questions = [];
+            isAnswering = false;
+        }
+
+        function restartQuiz() {
+            if (currentLevel) {
+                generateQuestions();
+                setupQuiz();
+                showQuestion();
+                document.getElementById('gameOver').style.display = 'none';
+                document.getElementById('gameArea').style.display = 'block';
+            }
+        }
+
+        function backToLevels() {
+            showLevelSelector();
+        }
+
+        function goHome() {
+            try {
+                if (document.referrer && document.referrer.includes('index')) {
+                    window.history.back();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
