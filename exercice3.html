@@ -706,12 +706,17 @@
             }
         }
 
+        
         function endGame() {
             saveGameStats();
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'block';
+            
+            // Retourner automatiquement à la sélection des niveaux après 3 secondes
+            setTimeout(() => {
+                showLevelSelector();
+            }, 3000);
         }
-
         function saveGameStats() {
             try {
                 const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
