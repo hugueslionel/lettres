@@ -582,6 +582,11 @@
             
             document.getElementById('overlay').classList.add('active');
             document.getElementById('gameOver').style.display = 'block';
+
+            // ⬇️ AJOUT ICI : Retourner automatiquement à la sélection des niveaux après 3 secondes
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 3000);
         }
 
         function saveGameStats(timeElapsed) {
