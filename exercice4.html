@@ -400,6 +400,9 @@
             const path = generateRandomPath();
             correctPath = path;
 
+            // Créer une liste de lettres sans la lettre cible
+            const availableLetters = OTHER_LETTERS.filter(l => l !== targetLetter.toLowerCase());
+
             // Remplir la grille
             for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
                 const row = Math.floor(i / GRID_SIZE);
@@ -416,8 +419,8 @@
                         index: i
                     });
                 } else {
-                    // Mettre une autre lettre
-                    const randomLetter = OTHER_LETTERS[Math.floor(Math.random() * OTHER_LETTERS.length)];
+                    // Mettre une autre lettre (excluant la lettre cible)
+                    const randomLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
                     const writing = WRITINGS[Math.floor(Math.random() * WRITINGS.length)];
                     grid.push({
                         letter: getLetter(randomLetter, writing),
@@ -428,7 +431,6 @@
                 }
             }
         }
-
         function generateRandomPath() {
             // Générer un chemin de (0,0) à (8,8)
             const path = [];
@@ -578,6 +580,11 @@
             
             document.getElementById('overlay').classList.add('active');
             document.getElementById('gameOver').style.display = 'block';
+
+            // Retourner automatiquement à la sélection des niveaux après 3 secondes
+            setTimeout(() => {
+                showLevelSelector();
+            }, 3000);
         }
 
         function saveGameStats(timeElapsed) {
