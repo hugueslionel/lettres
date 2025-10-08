@@ -800,6 +800,9 @@
     
             // ⬇️ AJOUT ICI : Retourner automatiquement à la sélection des niveaux après 3 secondes
             setTimeout(() => {
+               if (progress.level1Completed) {
+                goHome();
+               } else {
                 showLevelSelector();
             }, 3000);
         }
