@@ -577,14 +577,11 @@
         }
 
         function endGame() {
-            saveGameStats();
-            document.getElementById('gameArea').style.display = 'none';
-            document.getElementById('gameOver').style.display = 'block';
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            saveGameStats(elapsed);
             
-            // Retourner automatiquement à la sélection des niveaux après 3 secondes
-            setTimeout(() => {
-                showLevelSelector();
-            }, 3000);
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('gameOver').style.display = 'block';
         }
 
         function saveGameStats(timeElapsed) {
