@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+</script>
+</body>
+</html><!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -100,6 +102,23 @@
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
             position: relative;
             min-height: 250px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .drop-zone.clickable {
+            border: 4px solid #fdcb6e;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 5px 20px rgba(253, 203, 110, 0.4); }
+            50% { box-shadow: 0 8px 30px rgba(253, 203, 110, 0.8); }
         }
 
         .house-roof {
@@ -166,12 +185,7 @@
             border: 3px dashed #b2bec3;
             transition: all 0.3s ease;
             justify-content: center;
-        }
-
-        .drop-zone-content.drag-over {
-            background: #dfe6e9;
-            border-color: #6c5ce7;
-            transform: scale(1.02);
+            pointer-events: none;
         }
 
         .zone-majuscules .drop-zone-title { color: #e17055; }
@@ -221,7 +235,7 @@
             padding: 15px 20px;
             border-radius: 10px;
             font-size: 2.5em;
-            cursor: grab;
+            cursor: pointer;
             user-select: none;
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
@@ -232,20 +246,25 @@
         .letter-item.placed {
             font-size: 1.25em;
             padding: 8px 12px;
+            cursor: default;
         }
 
-        .letter-item:hover {
+        .letter-item:not(.placed):hover {
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
 
-        .letter-item:active {
-            cursor: grabbing;
-            opacity: 0.5;
+        .letter-item.selected {
+            border-color: #fdcb6e !important;
+            background: #fff9e6 !important;
+            transform: scale(1.15);
+            box-shadow: 0 8px 20px rgba(253, 203, 110, 0.6);
+            animation: selectedPulse 1s infinite;
         }
 
-        .letter-item.dragging {
-            opacity: 0.3;
+        @keyframes selectedPulse {
+            0%, 100% { transform: scale(1.15); }
+            50% { transform: scale(1.2); }
         }
 
         .letter-item.error {
@@ -309,12 +328,6 @@
 
         .btn-danger {
             background: #e17055;
-        }
-
-        .btn-check {
-            background: #fdcb6e;
-            color: #2d3436;
-            font-weight: bold;
         }
 
         /* Écran de fin */
@@ -418,7 +431,7 @@
         <!-- En-tête -->
         <div class="header">
             <h1>🗂️ Tri des Lettres</h1>
-            <p class="instructions">Fais glisser chaque lettre dans la bonne maison selon son écriture !</p>
+            <p class="instructions">Clique sur une lettre, puis clique sur la bonne maison !</p>
             <div class="progress-info">
                 <div>Lettres triées : <span id="sortedCount">0</span> / <span id="totalCount">0</span></div>
                 <div class="progress-bar-container">
@@ -429,43 +442,40 @@
 
         <!-- Zones de tri en forme de maisons -->
         <div class="sorting-zones">
-            <div class="drop-zone zone-majuscules" data-type="majuscule">
+            <div class="drop-zone zone-majuscules" data-type="majuscule" onclick="placeLetterInZone('majuscule')">
                 <div class="house-roof"></div>
                 <div class="drop-zone-header">
                     <div class="drop-zone-top">
                         <img src="images/majuscule.jpg" alt="Majuscules" class="zone-image">
                         <div class="drop-zone-count" id="countMajuscule">0 / 26</div>
                     </div>
-                    
                 </div>
                 <div class="drop-zone-content" id="zoneMajuscule"></div>
             </div>
 
-            <div class="drop-zone zone-script" data-type="script">
+            <div class="drop-zone zone-script" data-type="script" onclick="placeLetterInZone('script')">
                 <div class="house-roof"></div>
                 <div class="drop-zone-header">
                     <div class="drop-zone-top">
                         <img src="images/script.jpg" alt="Script" class="zone-image">
                         <div class="drop-zone-count" id="countScript">0 / 26</div>
                     </div>
-                   
                 </div>
                 <div class="drop-zone-content" id="zoneScript"></div>
             </div>
 
-            <div class="drop-zone zone-cursive" data-type="cursive">
+            <div class="drop-zone zone-cursive" data-type="cursive" onclick="placeLetterInZone('cursive')">
                 <div class="house-roof"></div>
                 <div class="drop-zone-header">
                     <div class="drop-zone-top">
                         <img src="images/cursif.jpg" alt="Cursive" class="zone-image">
                         <div class="drop-zone-count" id="countCursive">0 / 26</div>
                     </div>
-                    
                 </div>
                 <div class="drop-zone-content" id="zoneCursive"></div>
             </div>
 
-            <div class="drop-zone zone-poubelle" data-type="poubelle">
+            <div class="drop-zone zone-poubelle" data-type="poubelle" onclick="placeLetterInZone('poubelle')">
                 <div class="house-roof"></div>
                 <div class="drop-zone-header">
                     <div class="drop-zone-top">
@@ -480,7 +490,7 @@
 
         <!-- Lettres à trier en bas -->
         <div class="letters-pool">
-            <h3>📝 Lettres à trier</h3>
+            <h3>🔤 Lettres à trier</h3>
             <div class="letters-container" id="lettersPool"></div>
         </div>
 
@@ -516,7 +526,7 @@
         
         let allItems = [];
         let sortedItems = {};
-        let draggedElement = null;
+        let selectedLetter = null;
         let startTime = null;
 
         // Initialisation
@@ -616,162 +626,112 @@
                 sortedItems[zone].forEach(itemId => {
                     const item = allItems.find(i => i.id === itemId);
                     if (item) {
-                        const letterDiv = createLetterElement(item);
+                        const letterDiv = createLetterElement(item, zone === 'pool');
                         container.appendChild(letterDiv);
                     }
                 });
             });
 
             updateCounts();
-            addPlacedClass();
+            updateZoneHighlight();
         }
 
-        function createLetterElement(item) {
+        function createLetterElement(item, isInPool) {
             const div = document.createElement('div');
             div.className = `letter-item letter-${item.type}`;
+            if (!isInPool) {
+                div.classList.add('placed');
+            }
             div.textContent = item.char;
-            div.draggable = true;
             div.dataset.id = item.id;
             div.dataset.type = item.type;
 
-            div.addEventListener('dragstart', handleDragStart);
-            div.addEventListener('dragend', handleDragEnd);
+            if (isInPool) {
+                div.onclick = () => selectLetter(item.id);
+            }
 
             return div;
         }
 
-        function addPlacedClass() {
-            // Ajouter la classe "placed" aux lettres dans les zones de tri
-            document.querySelectorAll('.drop-zone-content:not(#lettersPool) .letter-item').forEach(item => {
-                item.classList.add('placed');
+        function selectLetter(itemId) {
+            // Désélectionner la lettre précédente
+            const prevSelected = document.querySelector('.letter-item.selected');
+            if (prevSelected) {
+                prevSelected.classList.remove('selected');
+            }
+
+            // Sélectionner la nouvelle lettre
+            selectedLetter = itemId;
+            const letterElement = document.querySelector(`[data-id="${itemId}"]`);
+            if (letterElement) {
+                letterElement.classList.add('selected');
+            }
+
+            updateZoneHighlight();
+        }
+
+        function updateZoneHighlight() {
+            // Retirer le highlight de toutes les zones
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.classList.remove('clickable');
             });
-        }
 
-        function handleDragStart(e) {
-            draggedElement = e.target;
-            e.target.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', e.target.innerHTML);
-        }
-
-        function handleDragEnd(e) {
-            e.target.classList.remove('dragging');
-        }
-
-        // Gestion des zones de dépôt
-        document.querySelectorAll('.drop-zone-content, .letters-container').forEach(zone => {
-            zone.addEventListener('dragover', handleDragOver);
-            zone.addEventListener('drop', handleDrop);
-            zone.addEventListener('dragleave', handleDragLeave);
-        });
-
-        function handleDragOver(e) {
-            if (e.preventDefault) {
-                e.preventDefault();
-            }
-            e.dataTransfer.dropEffect = 'move';
-            e.currentTarget.classList.add('drag-over');
-            return false;
-        }
-
-        function handleDragLeave(e) {
-            e.currentTarget.classList.remove('drag-over');
-        }
-
-        function handleDrop(e) {
-            if (e.stopPropagation) {
-                e.stopPropagation();
-            }
-            e.currentTarget.classList.remove('drag-over');
-
-            if (draggedElement) {
-                const itemId = draggedElement.dataset.id;
-                const itemType = draggedElement.dataset.type;
-                const targetZone = getZoneFromElement(e.currentTarget);
-                
-                // Vérifier si le placement est correct
-                let isCorrect = false;
-                if (targetZone === 'pool') {
-                    isCorrect = true; // Toujours OK de remettre dans le pool
-                } else if (targetZone === 'poubelle') {
-                    isCorrect = (itemType === 'intrus');
-                } else {
-                    isCorrect = (itemType === targetZone);
-                }
-
-                if (!isCorrect && targetZone !== 'pool') {
-                    // Mauvais placement : shake et retour au pool
-                    // On doit d'abord ajouter la lettre à la zone pour voir l'animation
-                    Object.keys(sortedItems).forEach(zone => {
-                        const index = sortedItems[zone].indexOf(itemId);
-                        if (index > -1) {
-                            sortedItems[zone].splice(index, 1);
-                        }
-                    });
-                    sortedItems[targetZone].push(itemId);
-                    
-                    saveProgress();
-                    renderLetters();
-                    updateProgress();
-                    
-                    // Trouver l'élément qui vient d'être ajouté et lui appliquer l'animation
-                    setTimeout(() => {
-                        const wrongElement = document.querySelector(`[data-id="${itemId}"]`);
-                        if (wrongElement) {
-                            wrongElement.classList.add('error');
-                            
-                            setTimeout(() => {
-                                // Retirer de la zone et remettre dans le pool
-                                Object.keys(sortedItems).forEach(zone => {
-                                    const index = sortedItems[zone].indexOf(itemId);
-                                    if (index > -1) {
-                                        sortedItems[zone].splice(index, 1);
-                                    }
-                                });
-                                sortedItems.pool.push(itemId);
-                                
-                                saveProgress();
-                                renderLetters();
-                                updateProgress();
-                            }, 800);
-                        }
-                    }, 50);
-                    
-                    return false;
-                }
-                
-                // Placement correct
-                // Retirer de l'ancienne zone
-                Object.keys(sortedItems).forEach(zone => {
-                    const index = sortedItems[zone].indexOf(itemId);
-                    if (index > -1) {
-                        sortedItems[zone].splice(index, 1);
-                    }
+            // Si une lettre est sélectionnée, highlight les zones
+            if (selectedLetter) {
+                document.querySelectorAll('.drop-zone').forEach(zone => {
+                    zone.classList.add('clickable');
                 });
-
-                // Ajouter à la nouvelle zone
-                sortedItems[targetZone].push(itemId);
-
-                // Sauvegarder et rafraîchir
-                saveProgress();
-                renderLetters();
-                updateProgress();
-                
-                // Vérifier si tout est trié correctement
-                checkIfComplete();
             }
-
-            return false;
         }
 
-        function getZoneFromElement(element) {
-            const id = element.id;
-            if (id === 'lettersPool') return 'pool';
-            if (id === 'zoneMajuscule') return 'majuscule';
-            if (id === 'zoneScript') return 'script';
-            if (id === 'zoneCursive') return 'cursive';
-            if (id === 'zonePoubelle') return 'poubelle';
-            return 'pool';
+        function placeLetterInZone(targetZone) {
+            if (!selectedLetter) return;
+
+            const item = allItems.find(i => i.id === selectedLetter);
+            if (!item) return;
+
+            // Vérifier si le placement est correct
+            let isCorrect = false;
+            if (targetZone === 'poubelle') {
+                isCorrect = (item.type === 'intrus');
+            } else {
+                isCorrect = (item.type === targetZone);
+            }
+
+            if (!isCorrect) {
+                // Mauvais placement : animation d'erreur
+                const letterElement = document.querySelector(`[data-id="${selectedLetter}"]`);
+                if (letterElement) {
+                    letterElement.classList.add('error');
+                    setTimeout(() => {
+                        letterElement.classList.remove('error');
+                    }, 500);
+                }
+                return;
+            }
+
+            // Placement correct
+            // Retirer de l'ancienne zone
+            Object.keys(sortedItems).forEach(zone => {
+                const index = sortedItems[zone].indexOf(selectedLetter);
+                if (index > -1) {
+                    sortedItems[zone].splice(index, 1);
+                }
+            });
+
+            // Ajouter à la nouvelle zone
+            sortedItems[targetZone].push(selectedLetter);
+
+            // Désélectionner
+            selectedLetter = null;
+
+            // Sauvegarder et rafraîchir
+            saveProgress();
+            renderLetters();
+            updateProgress();
+            
+            // Vérifier si tout est trié correctement
+            checkIfComplete();
         }
 
         function updateCounts() {
@@ -796,15 +756,6 @@
             document.getElementById('progressBar').textContent = `${percentage}%`;
         }
 
-        function checkSorting() {
-            // Cette fonction n'est plus utilisée mais conservée pour compatibilité
-            if (sortedItems.pool.length > 0) {
-                showFeedback('Il reste des lettres à trier !', 'error');
-                return;
-            }
-            checkIfComplete();
-        }
-        
         function checkIfComplete() {
             // Vérifier automatiquement si tout est trié correctement
             if (sortedItems.pool.length === 0) {
@@ -839,10 +790,6 @@
             }
         }
 
-        function showErrors(errorIds) {
-            // Fonction conservée pour compatibilité mais non utilisée
-        }
-
         function showFeedback(message, type) {
             const feedbackDiv = document.getElementById('feedbackMessage');
             feedbackDiv.textContent = message;
@@ -863,6 +810,11 @@
             // Afficher l'écran de fin
             document.getElementById('overlay').classList.add('active');
             document.getElementById('gameOver').style.display = 'block';
+            
+            // ⬇️ AJOUT ICI : Retourner automatiquement à la sélection des niveaux après 3 secondes
+            setTimeout(() => {
+                goHome();
+            }, 3000);
         }
 
         function saveProgress() {
@@ -939,6 +891,7 @@
         function resetGame() {
             sortedItems = {};
             allItems = [];
+            selectedLetter = null;
             
             // Supprimer la progression sauvegardée
             const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
@@ -972,6 +925,3 @@
                 window.location.href = 'index.html';
             }
         }
-    </script>
-</body>
-</html>
