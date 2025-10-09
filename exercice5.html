@@ -539,11 +539,7 @@
             loadProgress();
             
             // Si aucune progression, générer les lettres
-           if (
-                Object.keys(sortedItems).length === 0 ||
-                !sortedItems.pool ||
-                sortedItems.pool.length === 0
-            ) {
+            if (Object.keys(sortedItems).length === 0 || !sortedItems.pool || sortedItems.pool.length === 0) {
                 generateLetters();
             }
             
