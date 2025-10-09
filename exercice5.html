@@ -619,17 +619,28 @@
 
             // Rendre les lettres dans chaque zone
             Object.keys(sortedItems).forEach(zone => {
-                const container = zone === 'pool' ? 
-                    document.getElementById('lettersPool') : 
-                    document.getElementById('zone' + zone.charAt(0).toUpperCase() + zone.slice(1));
+                let container;
+                if (zone === 'pool') {
+                    container = document.getElementById('lettersPool');
+                } else if (zone === 'majuscule') {
+                    container = document.getElementById('zoneMajuscule');
+                } else if (zone === 'script') {
+                    container = document.getElementById('zoneScript');
+                } else if (zone === 'cursive') {
+                    container = document.getElementById('zoneCursive');
+                } else if (zone === 'poubelle') {
+                    container = document.getElementById('zonePoubelle');
+                }
                 
-                sortedItems[zone].forEach(itemId => {
-                    const item = allItems.find(i => i.id === itemId);
-                    if (item) {
-                        const letterDiv = createLetterElement(item, zone === 'pool');
-                        container.appendChild(letterDiv);
-                    }
-                });
+                if (container && sortedItems[zone]) {
+                    sortedItems[zone].forEach(itemId => {
+                        const item = allItems.find(i => i.id === itemId);
+                        if (item) {
+                            const letterDiv = createLetterElement(item, zone === 'pool');
+                            container.appendChild(letterDiv);
+                        }
+                    });
+                }
             });
 
             updateCounts();
@@ -810,8 +821,8 @@
             // Afficher l'écran de fin
             document.getElementById('overlay').classList.add('active');
             document.getElementById('gameOver').style.display = 'block';
-            
-            // ⬇️ AJOUT ICI : Retourner automatiquement à la sélection des niveaux après 3 secondes
+
+              // ⬇️ AJOUT ICI : Retourner automatiquement à la sélection des niveaux après 3 secondes
             setTimeout(() => {
                 goHome();
             }, 3000);
