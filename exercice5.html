@@ -692,6 +692,32 @@ function resetGame() {
 function goHome() {
     window.location.href = 'index.html';
 }
+
+    /* Effet de sélection : brillance jaune + pulsation douce */
+        .letter-item.selected {
+            border: 3px solid #fdcb6e !important;
+            background: #fff9e6 !important;
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(253, 203, 110, 0.6);
+            animation: selectedPulse 1s infinite;
+        }
+
+        @keyframes selectedPulse {
+            0%, 100% { transform: scale(1.15); }
+            50% { transform: scale(1.25); }
+        }
+
+        /* Les zones deviennent visuellement "actives" */
+        .drop-zone.clickable {
+            border: 4px solid #fdcb6e;
+            animation: zonePulse 1.5s infinite;
+        }
+
+        @keyframes zonePulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(253, 203, 110, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(253, 203, 110, 0.8); }
+        }
+
 </script>
 
 </body>
