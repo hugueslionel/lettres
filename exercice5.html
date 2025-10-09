@@ -508,470 +508,191 @@
     <!-- Message de feedback -->
     <div class="feedback-message" id="feedbackMessage"></div>
 
-    <script>
-        const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
-        
-        // 10 intrus : chiffres et symboles
-        const intrus = ['0', '1', '3', '5', '8', '€', '§', '&', '@', '%'];
-        
-        let allItems = [];
-        let sortedItems = {};
-        let draggedElement = null;
-        let startTime = null;
+    
+<script>
+const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+const intrus = ['0', '1', '3', '5', '8', '€', '§', '&', '@', '%'];
 
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', function() {
-            initGame();
+let allItems = [];
+let sortedItems = {};
+let selectedLetter = null;
+let startTime = null;
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    initGame();
+});
+
+function initGame() {
+    generateLetters();
+    renderLetters();
+    updateProgress();
+    startTime = Date.now();
+}
+
+function generateLetters() {
+    allItems = [];
+    sortedItems = {
+        pool: [],
+        majuscule: [],
+        script: [],
+        cursive: [],
+        poubelle: []
+    };
+
+    alphabet.forEach(letter => {
+        allItems.push({ char: letter.toUpperCase(), type: 'majuscule', id: `maj-${letter}` });
+        allItems.push({ char: letter.toLowerCase(), type: 'script', id: `script-${letter}` });
+        allItems.push({ char: letter.toLowerCase(), type: 'cursive', id: `cursive-${letter}` });
+    });
+
+    intrus.forEach((intru, i) => {
+        allItems.push({ char: intru, type: 'intrus', id: `intrus-${i}` });
+    });
+
+    shuffleArray(allItems);
+    sortedItems.pool = allItems.map(item => item.id);
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function renderLetters() {
+    document.getElementById('lettersPool').innerHTML = '';
+    ['Majuscule', 'Script', 'Cursive', 'Poubelle'].forEach(zone => {
+        document.getElementById('zone' + zone).innerHTML = '';
+    });
+
+    Object.keys(sortedItems).forEach(zone => {
+        const container = (zone === 'pool') ? 
+            document.getElementById('lettersPool') : 
+            document.getElementById('zone' + zone.charAt(0).toUpperCase() + zone.slice(1));
+        
+        sortedItems[zone].forEach(itemId => {
+            const item = allItems.find(i => i.id === itemId);
+            if (item) container.appendChild(createLetterElement(item, zone === 'pool'));
         });
+    });
 
-        function initGame() {
-            // Charger la progression sauvegardée ou créer une nouvelle
-            loadProgress();
-            
-            // Si aucune progression, générer les lettres
-            if (Object.keys(sortedItems).length === 0) {
-                generateLetters();
-            }
-            
-            renderLetters();
-            updateProgress();
-            startTime = Date.now();
-        }
+    updateCounts();
+    updateZoneHighlight();
+}
 
-        function generateLetters() {
-            allItems = [];
-            sortedItems = {
-                pool: [],
-                majuscule: [],
-                script: [],
-                cursive: [],
-                poubelle: []
-            };
+function createLetterElement(item, isInPool) {
+    const div = document.createElement('div');
+    div.className = `letter-item letter-${item.type}`;
+    if (!isInPool) div.classList.add('placed');
+    div.textContent = item.char;
+    div.dataset.id = item.id;
+    div.dataset.type = item.type;
+    if (isInPool) div.onclick = () => selectLetter(item.id);
+    return div;
+}
 
-            // Ajouter toutes les lettres en majuscules
-            alphabet.forEach(letter => {
-                allItems.push({
-                    char: letter.toUpperCase(),
-                    type: 'majuscule',
-                    id: `maj-${letter}`
-                });
-            });
+function selectLetter(itemId) {
+    const prev = document.querySelector('.letter-item.selected');
+    if (prev) prev.classList.remove('selected');
 
-            // Ajouter toutes les lettres en script
-            alphabet.forEach(letter => {
-                allItems.push({
-                    char: letter.toLowerCase(),
-                    type: 'script',
-                    id: `script-${letter}`
-                });
-            });
+    selectedLetter = itemId;
+    const el = document.querySelector(`[data-id="${itemId}"]`);
+    if (el) el.classList.add('selected');
+    updateZoneHighlight();
+}
 
-            // Ajouter toutes les lettres en cursive
-            alphabet.forEach(letter => {
-                allItems.push({
-                    char: letter.toLowerCase(),
-                    type: 'cursive',
-                    id: `cursive-${letter}`
-                });
-            });
+function updateZoneHighlight() {
+    document.querySelectorAll('.drop-zone').forEach(zone => {
+        zone.classList.remove('clickable');
+        zone.onclick = null;
+    });
 
-            // Ajouter les 10 intrus
-            intrus.forEach((intru, index) => {
-                allItems.push({
-                    char: intru,
-                    type: 'intrus',
-                    id: `intrus-${index}`
-                });
-            });
-
-            // Mélanger et mettre dans le pool
-            shuffleArray(allItems);
-            sortedItems.pool = allItems.map(item => item.id);
-            
-            // Sauvegarder
-            saveProgress();
-        }
-
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-
-        function renderLetters() {
-            // Vider toutes les zones
-            document.getElementById('lettersPool').innerHTML = '';
-            document.getElementById('zoneMajuscule').innerHTML = '';
-            document.getElementById('zoneScript').innerHTML = '';
-            document.getElementById('zoneCursive').innerHTML = '';
-            document.getElementById('zonePoubelle').innerHTML = '';
-
-            // Rendre les lettres dans chaque zone
-            Object.keys(sortedItems).forEach(zone => {
-                const container = zone === 'pool' ? 
-                    document.getElementById('lettersPool') : 
-                    document.getElementById('zone' + zone.charAt(0).toUpperCase() + zone.slice(1));
-                
-                sortedItems[zone].forEach(itemId => {
-                    const item = allItems.find(i => i.id === itemId);
-                    if (item) {
-                        const letterDiv = createLetterElement(item);
-                        container.appendChild(letterDiv);
-                    }
-                });
-            });
-
-            updateCounts();
-            addPlacedClass();
-        }
-
-        function createLetterElement(item) {
-            const div = document.createElement('div');
-            div.className = `letter-item letter-${item.type}`;
-            div.textContent = item.char;
-            div.draggable = true;
-            div.dataset.id = item.id;
-            div.dataset.type = item.type;
-
-            div.addEventListener('dragstart', handleDragStart);
-            div.addEventListener('dragend', handleDragEnd);
-
-            return div;
-        }
-
-        function addPlacedClass() {
-            // Ajouter la classe "placed" aux lettres dans les zones de tri
-            document.querySelectorAll('.drop-zone-content:not(#lettersPool) .letter-item').forEach(item => {
-                item.classList.add('placed');
-            });
-        }
-
-        function handleDragStart(e) {
-            draggedElement = e.target;
-            e.target.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', e.target.innerHTML);
-        }
-
-        function handleDragEnd(e) {
-            e.target.classList.remove('dragging');
-        }
-
-        // Gestion des zones de dépôt
-        document.querySelectorAll('.drop-zone-content, .letters-container').forEach(zone => {
-            zone.addEventListener('dragover', handleDragOver);
-            zone.addEventListener('drop', handleDrop);
-            zone.addEventListener('dragleave', handleDragLeave);
+    if (selectedLetter) {
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.classList.add('clickable');
+            zone.onclick = () => placeLetterInZone(zone.dataset.type);
         });
+    }
+}
 
-        function handleDragOver(e) {
-            if (e.preventDefault) {
-                e.preventDefault();
-            }
-            e.dataTransfer.dropEffect = 'move';
-            e.currentTarget.classList.add('drag-over');
-            return false;
+function placeLetterInZone(targetZone) {
+    if (!selectedLetter) return;
+    const item = allItems.find(i => i.id === selectedLetter);
+    if (!item) return;
+
+    let isCorrect = (targetZone === 'poubelle') ? (item.type === 'intrus') : (item.type === targetZone);
+
+    if (!isCorrect) {
+        const el = document.querySelector(`[data-id="${selectedLetter}"]`);
+        if (el) {
+            el.classList.add('error');
+            setTimeout(() => el.classList.remove('error'), 500);
         }
+        return;
+    }
 
-        function handleDragLeave(e) {
-            e.currentTarget.classList.remove('drag-over');
-        }
+    Object.keys(sortedItems).forEach(zone => {
+        const i = sortedItems[zone].indexOf(selectedLetter);
+        if (i > -1) sortedItems[zone].splice(i, 1);
+    });
 
-        function handleDrop(e) {
-            if (e.stopPropagation) {
-                e.stopPropagation();
-            }
-            e.currentTarget.classList.remove('drag-over');
+    sortedItems[targetZone].push(selectedLetter);
+    selectedLetter = null;
+    renderLetters();
+    updateProgress();
+    checkIfComplete();
+}
 
-            if (draggedElement) {
-                const itemId = draggedElement.dataset.id;
-                const itemType = draggedElement.dataset.type;
-                const targetZone = getZoneFromElement(e.currentTarget);
-                
-                // Vérifier si le placement est correct
-                let isCorrect = false;
-                if (targetZone === 'pool') {
-                    isCorrect = true; // Toujours OK de remettre dans le pool
-                } else if (targetZone === 'poubelle') {
-                    isCorrect = (itemType === 'intrus');
-                } else {
-                    isCorrect = (itemType === targetZone);
-                }
+function updateCounts() {
+    document.getElementById('countMajuscule').textContent = `${sortedItems.majuscule.length} / 26`;
+    document.getElementById('countScript').textContent = `${sortedItems.script.length} / 26`;
+    document.getElementById('countCursive').textContent = `${sortedItems.cursive.length} / 26`;
+    document.getElementById('countPoubelle').textContent = `${sortedItems.poubelle.length} / 10`;
+}
 
-                if (!isCorrect && targetZone !== 'pool') {
-                    // Mauvais placement : shake et retour au pool
-                    // On doit d'abord ajouter la lettre à la zone pour voir l'animation
-                    Object.keys(sortedItems).forEach(zone => {
-                        const index = sortedItems[zone].indexOf(itemId);
-                        if (index > -1) {
-                            sortedItems[zone].splice(index, 1);
-                        }
-                    });
-                    sortedItems[targetZone].push(itemId);
-                    
-                    saveProgress();
-                    renderLetters();
-                    updateProgress();
-                    
-                    // Trouver l'élément qui vient d'être ajouté et lui appliquer l'animation
-                    setTimeout(() => {
-                        const wrongElement = document.querySelector(`[data-id="${itemId}"]`);
-                        if (wrongElement) {
-                            wrongElement.classList.add('error');
-                            
-                            setTimeout(() => {
-                                // Retirer de la zone et remettre dans le pool
-                                Object.keys(sortedItems).forEach(zone => {
-                                    const index = sortedItems[zone].indexOf(itemId);
-                                    if (index > -1) {
-                                        sortedItems[zone].splice(index, 1);
-                                    }
-                                });
-                                sortedItems.pool.push(itemId);
-                                
-                                saveProgress();
-                                renderLetters();
-                                updateProgress();
-                            }, 800);
-                        }
-                    }, 50);
-                    
-                    return false;
-                }
-                
-                // Placement correct
-                // Retirer de l'ancienne zone
-                Object.keys(sortedItems).forEach(zone => {
-                    const index = sortedItems[zone].indexOf(itemId);
-                    if (index > -1) {
-                        sortedItems[zone].splice(index, 1);
-                    }
-                });
+function updateProgress() {
+    const total = allItems.length;
+    const sorted = total - sortedItems.pool.length;
+    const pct = Math.round((sorted / total) * 100);
+    document.getElementById('sortedCount').textContent = sorted;
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressBar').textContent = pct + '%';
+}
 
-                // Ajouter à la nouvelle zone
-                sortedItems[targetZone].push(itemId);
-
-                // Sauvegarder et rafraîchir
-                saveProgress();
-                renderLetters();
-                updateProgress();
-                
-                // Vérifier si tout est trié correctement
-                checkIfComplete();
-            }
-
-            return false;
-        }
-
-        function getZoneFromElement(element) {
-            const id = element.id;
-            if (id === 'lettersPool') return 'pool';
-            if (id === 'zoneMajuscule') return 'majuscule';
-            if (id === 'zoneScript') return 'script';
-            if (id === 'zoneCursive') return 'cursive';
-            if (id === 'zonePoubelle') return 'poubelle';
-            return 'pool';
-        }
-
-        function updateCounts() {
-            document.getElementById('countMajuscule').textContent = 
-                `${sortedItems.majuscule.length} / 26`;
-            document.getElementById('countScript').textContent = 
-                `${sortedItems.script.length} / 26`;
-            document.getElementById('countCursive').textContent = 
-                `${sortedItems.cursive.length} / 26`;
-            document.getElementById('countPoubelle').textContent = 
-                `${sortedItems.poubelle.length} / 10`;
-        }
-
-        function updateProgress() {
-            const total = allItems.length;
-            const sorted = total - sortedItems.pool.length;
-            const percentage = Math.round((sorted / total) * 100);
-
-            document.getElementById('sortedCount').textContent = sorted;
-            document.getElementById('totalCount').textContent = total;
-            document.getElementById('progressBar').style.width = `${percentage}%`;
-            document.getElementById('progressBar').textContent = `${percentage}%`;
-        }
-
-        function checkSorting() {
-            // Cette fonction n'est plus utilisée mais conservée pour compatibilité
-            if (sortedItems.pool.length > 0) {
-                showFeedback('Il reste des lettres à trier !', 'error');
-                return;
-            }
-            checkIfComplete();
-        }
-        
-        function checkIfComplete() {
-            // Vérifier automatiquement si tout est trié correctement
-            if (sortedItems.pool.length === 0) {
-                // Tout est placé
-                let allCorrect = true;
-                
-                ['majuscule', 'script', 'cursive', 'poubelle'].forEach(zone => {
-                    sortedItems[zone].forEach(itemId => {
-                        const item = allItems.find(i => i.id === itemId);
-                        if (item) {
-                            if (zone === 'poubelle') {
-                                if (item.type !== 'intrus') {
-                                    allCorrect = false;
-                                }
-                            } else {
-                                if (item.type !== zone) {
-                                    allCorrect = false;
-                                }
-                            }
-                        }
-                    });
-                });
-                
-                if (allCorrect) {
-                    setTimeout(() => {
-                        showFeedback('Parfait ! Tout est bien trié ! 🌟', 'success');
-                        setTimeout(() => {
-                            endGame();
-                        }, 1500);
-                    }, 500);
-                }
-            }
-        }
-
-        function showErrors(errorIds) {
-            // Fonction conservée pour compatibilité mais non utilisée
-        }
-
-        function showFeedback(message, type) {
-            const feedbackDiv = document.getElementById('feedbackMessage');
-            feedbackDiv.textContent = message;
-            feedbackDiv.className = `feedback-message ${type}`;
-            feedbackDiv.style.display = 'block';
-
-            setTimeout(() => {
-                feedbackDiv.style.display = 'none';
-            }, 2500);
-        }
-
-        function endGame() {
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            
-            // Sauvegarder les stats
-            saveGameStats(elapsed);
-            
-            // Afficher l'écran de fin
+function checkIfComplete() {
+    if (sortedItems.pool.length === 0) {
+        showFeedback('Bravo ! Tout est trié ! 🌟', 'success');
+        setTimeout(() => {
             document.getElementById('overlay').classList.add('active');
             document.getElementById('gameOver').style.display = 'block';
-        }
+        }, 1200);
+    }
+}
 
-        function saveProgress() {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                if (!students[currentStudentName].resultatsParJeu.tri) {
-                    students[currentStudentName].resultatsParJeu.tri = {};
-                }
-                
-                students[currentStudentName].resultatsParJeu.tri.progression = sortedItems;
-                students[currentStudentName].resultatsParJeu.tri.allItems = allItems;
-                
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
-            }
-        }
+function showFeedback(message, type) {
+    const div = document.getElementById('feedbackMessage');
+    div.textContent = message;
+    div.className = 'feedback-message ' + type;
+    div.style.display = 'block';
+    setTimeout(() => div.style.display = 'none', 2000);
+}
 
-        function loadProgress() {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                const triData = students[currentStudentName].resultatsParJeu.tri;
-                if (triData && triData.progression && triData.allItems) {
-                    sortedItems = triData.progression;
-                    allItems = triData.allItems;
-                }
-            }
-        }
+function resetGame() {
+    selectedLetter = null;
+    generateLetters();
+    renderLetters();
+    updateProgress();
+    document.getElementById('overlay').classList.remove('active');
+    document.getElementById('gameOver').style.display = 'none';
+}
 
-        function saveGameStats(timeElapsed) {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                const student = students[currentStudentName];
-                
-                student.statistiques.tempsTotal += timeElapsed;
-                student.statistiques.sessionsJouees++;
-                student.statistiques.lettresTravaillees = alphabet;
-                
-                if (!student.resultatsParJeu.tri) {
-                    student.resultatsParJeu.tri = {
-                        completions: 0,
-                        tempsTotal: 0,
-                        meilleurTemps: Infinity
-                    };
-                }
-                
-                const triStats = student.resultatsParJeu.tri;
-                triStats.completions++;
-                triStats.tempsTotal += timeElapsed;
-                triStats.meilleurTemps = Math.min(triStats.meilleurTemps, timeElapsed);
-                
-                // Réinitialiser la progression
-                delete triStats.progression;
-                delete triStats.allItems;
-                
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
-            }
-        }
+function goHome() {
+    window.location.href = 'index.html';
+}
+</script>
 
-        function getCurrentStudentName() {
-            try {
-                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
-                return currentStudent ? currentStudent.nom : null;
-            } catch (error) {
-                console.log('Erreur lors de la récupération de l\'élève:', error);
-                return null;
-            }
-        }
-
-        function resetGame() {
-            sortedItems = {};
-            allItems = [];
-            
-            // Supprimer la progression sauvegardée
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                if (students[currentStudentName].resultatsParJeu.tri) {
-                    delete students[currentStudentName].resultatsParJeu.tri.progression;
-                    delete students[currentStudentName].resultatsParJeu.tri.allItems;
-                }
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
-            }
-            
-            document.getElementById('overlay').classList.remove('active');
-            document.getElementById('gameOver').style.display = 'none';
-            
-            generateLetters();
-            renderLetters();
-            updateProgress();
-            startTime = Date.now();
-        }
-
-        function goHome() {
-            try {
-                if (document.referrer && document.referrer.includes('index')) {
-                    window.history.back();
-                } else {
-                    window.location.href = 'index.html';
-                }
-            } catch (error) {
-                window.location.href = 'index.html';
-            }
-        }
-    </script>
 </body>
 </html>
