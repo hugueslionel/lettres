@@ -1,8 +1,4 @@
-</script>
-</body>
-</html>    </script>
-</body>
-</html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -89,7 +85,6 @@
             font-weight: bold;
         }
 
-        /* Zones de tri en forme de maison */
         .sorting-zones {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -203,7 +198,6 @@
             border-color: #d63031;
         }
 
-        /* Zone des lettres à trier en bas */
         .letters-pool {
             background: rgba(255, 255, 255, 0.95);
             padding: 20px;
@@ -281,32 +275,6 @@
             75% { transform: translateX(-10px) scale(1.05); }
         }
 
-        /* Effet de sélection : brillance jaune + pulsation douce */
-        .letter-item.selected {
-            border: 3px solid #fdcb6e !important;
-            background: #fff9e6 !important;
-            transform: scale(1.15);
-            box-shadow: 0 0 20px rgba(253, 203, 110, 0.6);
-            animation: selectedPulse 1s infinite;
-        }
-
-        @keyframes selectedPulse {
-            0%, 100% { transform: scale(1.15); }
-            50% { transform: scale(1.25); }
-        }
-
-        /* Les zones deviennent visuellement "actives" */
-        .drop-zone.clickable {
-            border: 4px solid #fdcb6e;
-            animation: zonePulse 1.5s infinite;
-            cursor: pointer;
-        }
-
-        @keyframes zonePulse {
-            0%, 100% { box-shadow: 0 0 10px rgba(253, 203, 110, 0.4); }
-            50% { box-shadow: 0 0 25px rgba(253, 203, 110, 0.8); }
-        }
-
         .letter-majuscule {
             font-family: 'ScriptEcole2', 'Comic Sans MS', cursive;
             font-weight: bold;
@@ -324,7 +292,6 @@
             font-family: 'Comic Sans MS', cursive;
         }
 
-        /* Contrôles */
         .game-controls {
             display: flex;
             justify-content: center;
@@ -357,7 +324,6 @@
             background: #e17055;
         }
 
-        /* Écran de fin */
         .game-over {
             display: none;
             background: rgba(255, 255, 255, 0.95);
@@ -400,7 +366,6 @@
             display: block;
         }
 
-        /* Messages de feedback */
         .feedback-message {
             position: fixed;
             top: 50%;
@@ -419,7 +384,6 @@
         .feedback-message.success { color: #00b894; }
         .feedback-message.error { color: #d63031; }
 
-        /* Responsive */
         @media (max-width: 1024px) {
             .sorting-zones {
                 grid-template-columns: 1fr;
@@ -455,7 +419,6 @@
     <div class="overlay" id="overlay"></div>
     
     <div class="container">
-        <!-- En-tête -->
         <div class="header">
             <h1>🗂️ Tri des Lettres</h1>
             <p class="instructions">Clique sur une lettre, puis clique sur la bonne maison !</p>
@@ -467,7 +430,6 @@
             </div>
         </div>
 
-        <!-- Zones de tri en forme de maisons -->
         <div class="sorting-zones">
             <div class="drop-zone zone-majuscules" data-type="majuscule" onclick="placeLetterInZone('majuscule')">
                 <div class="house-roof"></div>
@@ -515,20 +477,17 @@
             </div>
         </div>
 
-        <!-- Lettres à trier en bas -->
         <div class="letters-pool">
             <h3>🔤 Lettres à trier</h3>
             <div class="letters-container" id="lettersPool"></div>
         </div>
 
-        <!-- Contrôles -->
         <div class="game-controls">
             <button class="btn btn-secondary" onclick="resetGame()">🔄 Tout remettre</button>
             <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
         </div>
     </div>
 
-    <!-- Écran de fin -->
     <div class="game-over" id="gameOver">
         <div class="victory-animation">🎉</div>
         <h2>Bravo !</h2>
@@ -542,7 +501,6 @@
         </div>
     </div>
 
-    <!-- Message de feedback -->
     <div class="feedback-message" id="feedbackMessage"></div>
 
     <script>
@@ -581,17 +539,26 @@
                 poubelle: []
             };
 
+            // Générer les lettres majuscules
             alphabet.forEach(letter => {
                 allItems.push({
                     char: letter.toUpperCase(),
                     type: 'majuscule',
                     id: `maj-${letter}`
                 });
+            });
+
+            // Générer les lettres script
+            alphabet.forEach(letter => {
                 allItems.push({
                     char: letter.toLowerCase(),
                     type: 'script',
                     id: `script-${letter}`
                 });
+            });
+
+            // Générer les lettres cursives
+            alphabet.forEach(letter => {
                 allItems.push({
                     char: letter.toLowerCase(),
                     type: 'cursive',
@@ -599,6 +566,7 @@
                 });
             });
 
+            // Générer les intrus
             intrus.forEach((intru, index) => {
                 allItems.push({
                     char: intru,
@@ -914,254 +882,7 @@
             } catch (error) {
                 window.location.href = 'index.html';
             }
-        }1);
-            });
-
-            sortedItems[targetZone].push(selectedLetter);
-            selectedLetter = null;
-            renderLetters();
-            updateProgress();
-            checkIfComplete();
         }
-
-        function updateCounts() {
-            document.getElementById('countMajuscule').textContent = `${sortedItems.majuscule.length} / 26`;
-            document.getElementById('countScript').textContent = `${sortedItems.script.length} / 26`;
-            document.getElementById('countCursive').textContent = `${sortedItems.cursive.length} / 26`;
-            document.getElementById('countPoubelle').textContent = `${sortedItems.poubelle.length} / 10`;
-        }
-
-        function updateProgress() {
-            const total = allItems.length;
-            const sorted = total - sortedItems.pool.length;
-            const pct = Math.round((sorted / total) * 100);
-            document.getElementById('sortedCount').textContent = sorted;
-            document.getElementById('totalCount').textContent = total;
-            document.getElementById('progressBar').style.width = pct + '%';
-            document.getElementById('progressBar').textContent = pct + '%';
-        }
-
-        function checkIfComplete() {
-            if (sortedItems.pool.length === 0) {
-                showFeedback('Bravo ! Tout est trié ! 🌟', 'success');
-                setTimeout(() => {
-                    document.getElementById('overlay').classList.add('active');
-                    document.getElementById('gameOver').style.display = 'block';
-                }, 1200);
-            }
-        }
-
-        function showFeedback(message, type) {
-            const div = document.getElementById('feedbackMessage');
-            div.textContent = message;
-            div.className = 'feedback-message ' + type;
-            div.style.display = 'block';
-            setTimeout(() => div.style.display = 'none', 2000);
-        }
-
-        function resetGame() {
-            selectedLetter = null;
-            generateLetters();
-            renderLetters();
-            updateProgress();
-            document.getElementById('overlay').classList.remove('active');
-            document.getElementById('gameOver').style.display = 'none';
-        }
-
-        function goHome() {
-            window.location.href = 'index.html';
-        }
-
-        function updateCounts() {
-            document.getElementById('countMajuscule').textContent = 
-                `${sortedItems.majuscule.length} / 26`;
-            document.getElementById('countScript').textContent = 
-                `${sortedItems.script.length} / 26`;
-            document.getElementById('countCursive').textContent = 
-                `${sortedItems.cursive.length} / 26`;
-            document.getElementById('countPoubelle').textContent = 
-                `${sortedItems.poubelle.length} / 10`;
-        }
-
-        function updateProgress() {
-            const total = allItems.length;
-            const sorted = total - sortedItems.pool.length;
-            const percentage = Math.round((sorted / total) * 100);
-
-            document.getElementById('sortedCount').textContent = sorted;
-            document.getElementById('totalCount').textContent = total;
-            document.getElementById('progressBar').style.width = `${percentage}%`;
-            document.getElementById('progressBar').textContent = `${percentage}%`;
-        }
-
-        function checkIfComplete() {
-            // Vérifier automatiquement si tout est trié correctement
-            if (sortedItems.pool.length === 0) {
-                // Tout est placé
-                let allCorrect = true;
-                
-                ['majuscule', 'script', 'cursive', 'poubelle'].forEach(zone => {
-                    sortedItems[zone].forEach(itemId => {
-                        const item = allItems.find(i => i.id === itemId);
-                        if (item) {
-                            if (zone === 'poubelle') {
-                                if (item.type !== 'intrus') {
-                                    allCorrect = false;
-                                }
-                            } else {
-                                if (item.type !== zone) {
-                                    allCorrect = false;
-                                }
-                            }
-                        }
-                    });
-                });
-                
-                if (allCorrect) {
-                    setTimeout(() => {
-                        showFeedback('Parfait ! Tout est bien trié ! 🌟', 'success');
-                        setTimeout(() => {
-                            endGame();
-                        }, 1500);
-                    }, 500);
-                }
-            }
-        }
-
-        function showFeedback(message, type) {
-            const feedbackDiv = document.getElementById('feedbackMessage');
-            feedbackDiv.textContent = message;
-            feedbackDiv.className = `feedback-message ${type}`;
-            feedbackDiv.style.display = 'block';
-
-            setTimeout(() => {
-                feedbackDiv.style.display = 'none';
-            }, 2500);
-        }
-
-        function endGame() {
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            
-            // Sauvegarder les stats
-            saveGameStats(elapsed);
-            
-            // Afficher l'écran de fin
-            document.getElementById('overlay').classList.add('active');
-            document.getElementById('gameOver').style.display = 'block';
-        }
-
-        function saveProgress() {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                if (!students[currentStudentName].resultatsParJeu.tri) {
-                    students[currentStudentName].resultatsParJeu.tri = {};
-                }
-                
-                students[currentStudentName].resultatsParJeu.tri.progression = sortedItems;
-                students[currentStudentName].resultatsParJeu.tri.allItems = allItems;
-                
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
-            }
-        }
-
-        function loadProgress() {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                const triData = students[currentStudentName].resultatsParJeu.tri;
-                if (triData && triData.progression && triData.allItems) {
-                    sortedItems = triData.progression;
-                    allItems = triData.allItems;
-                    console.log('Progression chargée');
-                    return;
-                }
-            }
-            
-            // Aucune progression trouvée
-            sortedItems = {};
-            allItems = [];
-            console.log('Aucune progression trouvée');
-        }
-
-        function saveGameStats(timeElapsed) {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                const student = students[currentStudentName];
-                
-                student.statistiques.tempsTotal += timeElapsed;
-                student.statistiques.sessionsJouees++;
-                student.statistiques.lettresTravaillees = alphabet;
-                
-                if (!student.resultatsParJeu.tri) {
-                    student.resultatsParJeu.tri = {
-                        completions: 0,
-                        tempsTotal: 0,
-                        meilleurTemps: Infinity
-                    };
-                }
-                
-                const triStats = student.resultatsParJeu.tri;
-                triStats.completions++;
-                triStats.tempsTotal += timeElapsed;
-                triStats.meilleurTemps = Math.min(triStats.meilleurTemps, timeElapsed);
-                
-                // Réinitialiser la progression
-                delete triStats.progression;
-                delete triStats.allItems;
-                
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
-            }
-        }
-
-        function getCurrentStudentName() {
-            try {
-                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
-                return currentStudent ? currentStudent.nom : null;
-            } catch (error) {
-                console.log('Erreur lors de la récupération de l\'élève:', error);
-                return null;
-            }
-        }
-
-        function resetGame() {
-            sortedItems = {};
-            allItems = [];
-            selectedLetter = null;
-            
-            // Supprimer la progression sauvegardée
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                if (students[currentStudentName].resultatsParJeu.tri) {
-                    delete students[currentStudentName].resultatsParJeu.tri.progression;
-                    delete students[currentStudentName].resultatsParJeu.tri.allItems;
-                }
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
-            }
-            
-            document.getElementById('overlay').classList.remove('active');
-            document.getElementById('gameOver').style.display = 'none';
-            
-            generateLetters();
-            renderLetters();
-            updateProgress();
-            startTime = Date.now();
-        }
-
-        function goHome() {
-            try {
-                if (document.referrer && document.referrer.includes('index')) {
-                    window.history.back();
-                } else {
-                    window.location.href = 'index.html';
-                }
-            } catch (error) {
-                window.location.href = 'index.html';
-            }
-        }
+    </script>
+</body>
+</html>
