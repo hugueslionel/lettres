@@ -619,33 +619,23 @@
 
             // Rendre les lettres dans chaque zone
             Object.keys(sortedItems).forEach(zone => {
-                let container;
-                if (zone === 'pool') {
-                    container = document.getElementById('lettersPool');
-                } else if (zone === 'majuscule') {
-                    container = document.getElementById('zoneMajuscule');
-                } else if (zone === 'script') {
-                    container = document.getElementById('zoneScript');
-                } else if (zone === 'cursive') {
-                    container = document.getElementById('zoneCursive');
-                } else if (zone === 'poubelle') {
-                    container = document.getElementById('zonePoubelle');
-                }
+                const container = zone === 'pool' ? 
+                    document.getElementById('lettersPool') : 
+                    document.getElementById('zone' + zone.charAt(0).toUpperCase() + zone.slice(1));
                 
-                if (container && sortedItems[zone]) {
-                    sortedItems[zone].forEach(itemId => {
-                        const item = allItems.find(i => i.id === itemId);
-                        if (item) {
-                            const letterDiv = createLetterElement(item, zone === 'pool');
-                            container.appendChild(letterDiv);
-                        }
-                    });
-                }
+                sortedItems[zone].forEach(itemId => {
+                    const item = allItems.find(i => i.id === itemId);
+                    if (item) {
+                        const letterDiv = createLetterElement(item);
+                        container.appendChild(letterDiv);
+                    }
+                });
             });
 
             updateCounts();
-            updateZoneHighlight();
+            addPlacedClass();
         }
+
 
         function createLetterElement(item, isInPool) {
             const div = document.createElement('div');
