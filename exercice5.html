@@ -525,6 +525,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initGame() {
     generateLetters();
+
+    // Sécurité : s’assurer qu’il y a bien des lettres à trier
+    if (!sortedItems.pool || sortedItems.pool.length === 0) {
+        sortedItems.pool = allItems.map(item => item.id);
+    }
+
     renderLetters();
     updateProgress();
     startTime = Date.now();
