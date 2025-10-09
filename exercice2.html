@@ -582,11 +582,17 @@
 
         function generateQuestions() {
             questions = [];
-            const letters = currentLevel.letters;
+            const letters = [...currentLevel.letters]; // Copie du tableau
             const writings = currentLevel.writings;
+            
+            // Mélanger les lettres pour avoir un ordre aléatoire
+            const shuffledLetters = shuffleArray(letters);
+            
+            // Prendre uniquement le nombre de lettres nécessaires (sans doublons)
+            const selectedLetters = shuffledLetters.slice(0, currentLevel.questionsCount);
 
-            for (let i = 0; i < currentLevel.questionsCount; i++) {
-                const letter = letters[Math.floor(Math.random() * letters.length)];
+            for (let i = 0; i < selectedLetters.length; i++) {
+                const letter = selectedLetters[i];
                 
                 const questionWriting = writings[Math.floor(Math.random() * writings.length)];
                 let answerWriting;
