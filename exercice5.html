@@ -538,10 +538,16 @@
             // Charger la progression sauvegardée ou créer une nouvelle
             loadProgress();
             
-            // Si aucune progression, générer les lettres
-            if (Object.keys(sortedItems).length === 0 || !sortedItems.pool || sortedItems.pool.length === 0) {
-                generateLetters();
-            }
+            // Vérifier si les lettres sont présentes dans le pool, sinon régénérer
+        if (
+            !sortedItems.pool ||
+            !Array.isArray(sortedItems.pool) ||
+            sortedItems.pool.length === 0 ||
+            allItems.length === 0
+        ) {
+            console.warn("Aucune lettre trouvée, génération d’un nouveau jeu...");
+            generateLetters();
+        }
             
             console.log('Sorted items:', sortedItems);
             console.log('All items:', allItems);
