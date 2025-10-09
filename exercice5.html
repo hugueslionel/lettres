@@ -684,20 +684,6 @@
             updateZoneHighlight();
         }
 
-        function updateZoneHighlight() {
-            // Retirer le highlight de toutes les zones
-            document.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.classList.remove('clickable');
-            });
-
-            // Si une lettre est sélectionnée, highlight les zones
-            if (selectedLetter) {
-                document.querySelectorAll('.drop-zone').forEach(zone => {
-                    zone.classList.add('clickable');
-                });
-            }
-        }
-
         function placeLetterInZone(targetZone) {
             if (!selectedLetter) return;
 
@@ -746,6 +732,20 @@
             
             // Vérifier si tout est trié correctement
             checkIfComplete();
+        }
+
+        function updateZoneHighlight() {
+            // Retirer le highlight de toutes les zones
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.classList.remove('clickable');
+            });
+
+            // Si une lettre est sélectionnée, highlight les zones
+            if (selectedLetter) {
+                document.querySelectorAll('.drop-zone').forEach(zone => {
+                    zone.classList.add('clickable');
+                });
+            }
         }
 
         function updateCounts() {
