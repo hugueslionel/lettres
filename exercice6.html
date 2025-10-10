@@ -742,6 +742,10 @@
                 setTimeout(() => {
                     completeStage();
                 }, 500);
+                // Retourner automatiquement à la sélection des niveaux après 3 secondes
+                setTimeout(() => {
+                    showLevelSelector();
+                }, 3000);;
             }
         }
 
