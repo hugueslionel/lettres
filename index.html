@@ -94,9 +94,14 @@
             box-shadow: 0 5px 15px rgba(116, 185, 255, 0.3);
         }
 
-        /* Menu principal */
+        /* Menu principal caché par défaut */
         .main-menu {
-            display: block;
+            display: none;
+        }
+
+        /* Quand il est activé, il doit être en block */
+        .main-menu[style*="display: block"] {
+            display: block !important;
         }
 
         .games-grid {
@@ -525,7 +530,7 @@
             showMainMenu();
         }
 
-       function logout() {
+      function logout() {
             currentStudent = null;
             document.getElementById('loginScreen').style.display = 'block';
             document.getElementById('userBar').classList.add('hidden');
@@ -537,11 +542,11 @@
 
         function showMainMenu() {
             document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('userBar').style.display = 'block';
-            document.getElementById('quickSettings').style.display = 'block';
-            document.getElementById('mainMenu').style.display = 'block'; // ← IMPORTANT
-            document.getElementById('teacherPanel').style.display = 'none';
+            document.getElementById('userBar').classList.remove('hidden');
+            document.getElementById('quickSettings').classList.remove('hidden');
+            document.getElementById('mainMenu').style.display = 'block'; // Afficher le menu des jeux
     
+            // Mettre à jour l'affichage utilisateur
             updateUserDisplay();
         }
 
