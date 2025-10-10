@@ -882,10 +882,17 @@
             showLevelSelector();
         }
 
-       function goHome() {
-            // Redirection directe et simple vers le menu des jeux
-            window.location.href = 'index.html';
-       }
+      function goHome() {
+            try {
+                if (document.referrer && document.referrer.includes('index')) {
+                    window.history.back();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                window.location.href = 'index.html';
+            }
+        }
     </script>
 </body>
 </html>
