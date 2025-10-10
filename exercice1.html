@@ -768,23 +768,9 @@
         }
 
        function goHome() {
-            // Solution robuste : Redirection directe vers le menu des jeux
-            try {
-                // Forcer la redirection vers le menu principal
-                window.location.href = 'index (6).html';
-        
-                // Optionnel : Ajouter un timeout pour s'assurer que la redirection se fait
-                setTimeout(() => {
-                    if (window.location.href.indexOf('index') === -1) {
-                        window.location.href = 'index (6).html';
-                    }
-                }, 100);
-            } catch (error) {
-                console.error('Erreur de navigation:', error);
-                // Fallback en cas d'erreur
-                window.location.href = 'index (6).html';
-            }
-}
+            // Redirection directe et simple vers le menu des jeux
+            window.location.href = 'index (6).html';
+       }
     </script>
 </body>
 </html>
