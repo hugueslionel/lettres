@@ -525,12 +525,12 @@
             showMainMenu();
         }
 
-        function logout() {
+       function logout() {
             currentStudent = null;
             document.getElementById('loginScreen').style.display = 'block';
             document.getElementById('userBar').classList.add('hidden');
             document.getElementById('quickSettings').classList.add('hidden');
-            document.getElementById('mainMenu').style.display = 'none'; // Changé pour cohérence
+            document.getElementById('mainMenu').style.display = 'none'; // Cacher le menu des jeux
             document.getElementById('teacherPanel').style.display = 'none';
             loadStudents();
         }
@@ -539,8 +539,8 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('userBar').classList.remove('hidden');
             document.getElementById('quickSettings').classList.remove('hidden');
-            document.getElementById('mainMenu').style.display = 'block'; // Changé de classList à style.display
-            
+            document.getElementById('mainMenu').style.display = 'block'; // Afficher le menu des jeux
+    
             // Mettre à jour l'affichage utilisateur
             updateUserDisplay();
         }
