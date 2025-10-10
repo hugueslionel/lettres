@@ -341,13 +341,11 @@
         <div id="loginScreen" class="login-screen">
             <h2>👋 Bonjour ! Choisis ton prénom</h2>
             <div class="student-selector">
-                <select id="studentSelect">
-                    <option value="">-- Choisir un prénom --</option>
-                </select>
-                <br>
+                <div id="studentsGrid" class="students-grid">
+                    <!-- Les élèves s'afficheront ici sous forme de cartes -->
+                </div>
                 <input type="text" id="newStudentInput" placeholder="Nouveau prénom" style="display: none;" onkeypress="if(event.key==='Enter') addNewStudent()">
             </div>
-            <button class="btn" onclick="loginStudent()">Commencer à jouer</button>
             <button class="btn btn-secondary" onclick="toggleNewStudent()" id="newStudentBtn">Nouveau prénom</button>
             <button class="btn" onclick="addNewStudent()" id="addStudentBtn" style="display: none;">Ajouter élève</button>
             <br><br>
@@ -377,10 +375,6 @@
             <div id="classStats" class="stats-grid hidden">
                 <!-- Les stats seront générées ici -->
             </div>
-        </div>
-        <!-- ✅ Paramètres rapides -->
-        <div id="quickSettings" class="quick-settings hidden">
-            <h1>Choisis ton jeu</h1>
         </div>
 
         <!-- Menu principal des jeux -->
@@ -450,22 +444,49 @@
         // Gestion des élèves
         function loadStudents() {
             const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const select = document.getElementById('studentSelect');
+            const studentsGrid = document.getElementById('studentsGrid');
             
-            // Vider les options existantes sauf la première
-            select.innerHTML = '<option value="">-- Choisir un prénom --</option>';
+            // Vider la grille
+            studentsGrid.innerHTML = '';
             
             Object.keys(students).forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                select.appendChild(option);
+                const studentCard = document.createElement('div');
+                studentCard.className = 'student-card';
+                studentCard.onclick = () => selectStudent(name);
+                
+                studentCard.innerHTML = `
+                    <div class="student-card-avatar">${name.charAt(0)}</div>
+                    <div class="student-card-name">${name}</div>
+                `;
+                
+                studentsGrid.appendChild(studentCard);
             });
+        }
+
+        function selectStudent(studentName) {
+            // Nettoyer le nom (première lettre majuscule)
+            studentName = studentName.charAt(0).toUpperCase() + studentName.slice(1);
+
+            // Créer ou charger les données de l'élève
+            let students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            
+            if (!students[studentName]) {
+                // Créer l'élève s'il n'existe pas encore
+                students[studentName] = {...defaultStudentData, nom: studentName};
+            } else {
+                // Mettre à jour la dernière connexion
+                students[studentName].derniereConnexion = new Date().toISOString().split('T')[0];
+            }
+            
+            localStorage.setItem('alphabet_students', JSON.stringify(students));
+            currentStudent = students[studentName];
+            
+            showMainMenu();
         }
 
         function toggleNewStudent() {
             const input = document.getElementById('newStudentInput');
-            const select = document.getElementById('studentSelect');
+            const studentsGrid = document.getElementById('studentsGrid');
             const newStudentBtn = document.getElementById('newStudentBtn');
             const addStudentBtn = document.getElementById('addStudentBtn');
             
@@ -473,17 +494,16 @@
                 // Afficher le mode "nouveau prénom"
                 input.style.display = 'block';
                 input.focus();
-                select.style.display = 'none';
+                studentsGrid.style.display = 'none';
                 newStudentBtn.textContent = 'Annuler';
                 addStudentBtn.style.display = 'inline-block';
             } else {
                 // Revenir au mode "sélection"
                 input.style.display = 'none';
-                select.style.display = 'block';
+                studentsGrid.style.display = 'grid';
                 input.value = '';
                 newStudentBtn.textContent = 'Nouveau prénom';
                 addStudentBtn.style.display = 'none';
-                select.selectedIndex = 0;
             }
         }
 
@@ -525,7 +545,6 @@
         }
 
         function loginStudent() {
-            const select = document.getElementById('studentSelect');
             const input = document.getElementById('newStudentInput');
             
             let studentName = '';
@@ -534,9 +553,6 @@
             if (input.style.display !== 'none' && input.value.trim()) {
                 // Mode "nouveau prénom" avec du texte
                 studentName = input.value.trim();
-            } else if (select.style.display !== 'none' && select.value) {
-                // Mode "sélection" avec un élève sélectionné
-                studentName = select.value;
             }
             
             if (!studentName) {
@@ -563,7 +579,7 @@
             
             // Remettre l'interface en état normal après connexion
             input.style.display = 'none';
-            select.style.display = 'block';
+            document.getElementById('studentsGrid').style.display = 'grid';
             input.value = '';
             document.getElementById('newStudentBtn').textContent = 'Nouveau prénom';
             document.getElementById('addStudentBtn').style.display = 'none';
@@ -575,7 +591,6 @@
             currentStudent = null;
             document.getElementById('loginScreen').style.display = 'block';
             document.getElementById('userBar').classList.add('hidden');
-            document.getElementById('quickSettings').classList.add('hidden');
             document.getElementById('mainMenu').style.display = 'none'; // Cacher le menu des jeux
             document.getElementById('teacherPanel').style.display = 'none';
             loadStudents();
@@ -584,7 +599,6 @@
         function showMainMenu() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('userBar').classList.remove('hidden');
-            document.getElementById('quickSettings').classList.remove('hidden');
             document.getElementById('mainMenu').style.display = 'block'; // Afficher le menu des jeux
     
             // Mettre à jour l'affichage utilisateur
@@ -598,37 +612,6 @@
             document.getElementById('userName').textContent = `Bonjour ${currentStudent.nom} !`;
             document.getElementById('userProgress').textContent = 
                 `${currentStudent.statistiques.sessionsJouees} session(s) jouées - ${Math.floor(currentStudent.statistiques.tempsTotal / 60)} minute(s)`;
-        }
-
-        // Gestion des paramètres
-        function toggleSetting(element, setting) {
-            const checkbox = element.querySelector('input[type="checkbox"]');
-            checkbox.checked = !checkbox.checked;
-            element.classList.toggle('checked', checkbox.checked);
-            
-            if (checkbox.checked) {
-                if (!gameSettings.writings.includes(setting)) {
-                    gameSettings.writings.push(setting);
-                }
-            } else {
-                gameSettings.writings = gameSettings.writings.filter(w => w !== setting);
-            }
-        }
-
-        function toggleLetterGroup(element, group) {
-            const checkbox = element.querySelector('input[type="checkbox"]');
-            
-            // Décocher tous les autres groupes
-            document.querySelectorAll('#quickSettings .checkbox-group .checkbox-item').forEach(item => {
-                const cb = item.querySelector('input[type="checkbox"]');
-                cb.checked = false;
-                item.classList.remove('checked');
-            });
-            
-            // Cocher celui sélectionné
-            checkbox.checked = true;
-            element.classList.add('checked');
-            gameSettings.letters = group;
         }
 
         // Lancement des jeux
