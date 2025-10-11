@@ -31,6 +31,11 @@
             padding: 30px;
             border-radius: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .header.hidden {
+            display: none;
         }
 
         .header h1 {
@@ -185,58 +190,6 @@
             line-height: 1.4;
         }
 
-        /* Paramètres rapides */
-        .quick-settings {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-        }
-
-        .setting-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .setting-group label {
-            font-weight: bold;
-            color: #2d3436;
-        }
-
-        .checkbox-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            background: #ddd;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            user-select: none;
-        }
-
-        .checkbox-item input[type="checkbox"] {
-            margin-right: 8px;
-            transform: scale(1.2);
-        }
-
-        .checkbox-item.checked {
-            background: #00b894;
-            color: white;
-        }
-
         /* Barre d'utilisateur */
         .user-bar {
             background: rgba(255, 255, 255, 0.9);
@@ -323,17 +276,15 @@
             .games-grid {
                 grid-template-columns: 1fr;
             }
-            
-            .quick-settings {
-                flex-direction: column;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🔤 Apprentissage de l'Alphabet</h1>    
+        <!-- Header qui sera masqué quand l'élève est connecté -->
+        <div id="mainHeader" class="header">
+            <h1>🔤 Apprentissage de l'Alphabet</h1>
+            <p class="subtitle">Grande Section - Majuscules, Script et Cursives</p>
         </div>
 
         <!-- Écran de connexion -->
@@ -586,19 +537,23 @@
             showMainMenu();
         }
 
-      function logout() {
+        function logout() {
             currentStudent = null;
             document.getElementById('loginScreen').style.display = 'block';
             document.getElementById('userBar').classList.add('hidden');
-            document.getElementById('mainMenu').style.display = 'none'; // Cacher le menu des jeux
+            document.getElementById('mainMenu').style.display = 'none';
             document.getElementById('teacherPanel').style.display = 'none';
+            // Réafficher le header
+            document.getElementById('mainHeader').classList.remove('hidden');
             loadStudents();
         }
 
         function showMainMenu() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('userBar').classList.remove('hidden');
-            document.getElementById('mainMenu').style.display = 'block'; // Afficher le menu des jeux
+            document.getElementById('mainMenu').style.display = 'block';
+            // Masquer le header
+            document.getElementById('mainHeader').classList.add('hidden');
     
             // Mettre à jour l'affichage utilisateur
             updateUserDisplay();
