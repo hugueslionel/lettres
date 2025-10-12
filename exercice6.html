@@ -69,7 +69,6 @@
             font-weight: bold;
         }
 
-        /* Sélection du niveau */
         .level-selector {
             background: rgba(255, 255, 255, 0.95);
             padding: 30px;
@@ -144,7 +143,6 @@
             transition: width 0.3s ease;
         }
 
-        /* Zone de jeu */
         .game-area {
             display: none;
         }
@@ -159,7 +157,6 @@
             border-radius: 10px;
         }
 
-        /* Train */
         .train-container {
             background: rgba(255, 255, 255, 0.95);
             padding: 30px;
@@ -176,7 +173,7 @@
             padding: 20px 0;
             align-items: flex-end;
             flex-wrap: wrap;
-            row-gap: 15px;      /* ← Optionnel : espace entre les lignes */
+            row-gap: 15px;
         }
 
         .locomotive {
@@ -258,11 +255,10 @@
         }
 
         .letter-cursive {
-            font-family: 'BelleAllureGS', cursive;
+            font-family: ' BelleAllureGS', cursive;
             text-transform: lowercase;
         }
 
-        /* Zone des lettres */
         .letters-pool {
             background: rgba(255, 255, 255, 0.95);
             padding: 25px;
@@ -317,7 +313,6 @@
             pointer-events: none;
         }
 
-        /* Contrôles */
         .game-controls {
             display: flex;
             justify-content: center;
@@ -349,7 +344,6 @@
             background: #e17055;
         }
 
-        /* Message de transition */
         .transition-message {
             display: none;
             background: rgba(255, 255, 255, 0.95);
@@ -375,7 +369,6 @@
             margin-bottom: 20px;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -411,7 +404,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- En-tête -->
         <div class="header">
             <div class="game-title">
                 <span>🚂</span>
@@ -422,13 +414,11 @@
             </div>
         </div>
 
-        <!-- Sélection du niveau -->
         <div id="levelSelector" class="level-selector">
             <h2>📚 Choisis ton niveau</h2>
             <div class="level-cards" id="levelCards"></div>
         </div>
 
-        <!-- Message de transition -->
         <div id="transitionMessage" class="transition-message">
             <div class="celebration">🎉</div>
             <h2 id="transitionTitle"></h2>
@@ -436,16 +426,13 @@
             <button class="btn" id="continueBtn" style="margin-top: 20px;">Continuer</button>
         </div>
 
-        <!-- Zone de jeu -->
         <div id="gameArea" class="game-area">
             <div class="stage-info" id="stageInfo"></div>
             
-            <!-- Train -->
             <div class="train-container">
                 <div class="train-track" id="trainTrack"></div>
             </div>
 
-            <!-- Zone des lettres -->
             <div class="letters-pool">
                 <div class="pool-title">Lettres à placer :</div>
                 <div class="letters-grid" id="lettersPool"></div>
@@ -475,8 +462,14 @@
         let studentProgress = null;
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadProgress();
-            showLevelSelector();
+            const savedStudent = sessionStorage.getItem('currentStudent');
+            if (savedStudent) {
+                loadProgress();
+                showLevelSelector();
+            } else {
+                // Redirect to login if no student is logged in
+                window.location.href = 'index.html';
+            }
         });
 
         function loadProgress() {
@@ -593,7 +586,6 @@
         function setupGame() {
             selectedLetter = null;
 
-            // 🔑 S'assurer que currentStage est bien à jour avec la progression enregistrée
             const progressKey = `niveau${currentLevel.num}`;
             currentStage = studentProgress[progressKey].currentStage;
 
@@ -820,17 +812,6 @@
         function goHome() {
             window.location.href = 'menu-jeux.html';
         }
-         // Initialisation
-            document.addEventListener('DOMContentLoaded', function() {
-                loadStudents();
-
-                // ✅ Ajout : si un élève est en session, on le recharge et on affiche directement le menu des jeux
-                const savedStudent = sessionStorage.getItem('currentStudent');
-                if (savedStudent) {
-                    currentStudent = JSON.parse(savedStudent);
-                    showMainMenu();
-                }
-            });
     </script>
 </body>
 </html>
