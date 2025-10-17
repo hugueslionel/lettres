@@ -78,10 +78,6 @@
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .level-selector .game-controls {
-            margin-top: 30px;
-        }
-
         .level-cards {
             display: flex;
             gap: 20px;
@@ -259,7 +255,7 @@
         }
 
         .letter-cursive {
-            font-family: ' BelleAllureGS', cursive;
+            font-family: 'BelleAllureGS', cursive;
             text-transform: lowercase;
         }
 
@@ -421,11 +417,9 @@
         <div id="levelSelector" class="level-selector">
             <h2>📚 Choisis ton niveau</h2>
             <div class="level-cards" id="levelCards"></div>
-        </div>
-
-        <!-- AJOUTER CE BOUTON ICI -->
-        <div class="game-controls" style="margin-top: 30px;">
-            <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+            <div class="game-controls" style="margin-top: 30px;">
+                <button class="btn btn-danger" onclick="goHome()">🎮 Menu des jeux</button>
+            </div>
         </div>
 
         <div id="transitionMessage" class="transition-message">
