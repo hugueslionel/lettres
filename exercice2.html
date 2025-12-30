@@ -576,16 +576,83 @@
         function startLevel(level) {
             currentLevel = LEVELS[level];
             if (!currentLevel) return;
-            
+    
             currentLevelNumber = level;
-
+    
+            // Récupérer la progression sauvegardée pour ce niveau
+            const progress = getLevelProgress(level);
+    
+            // Générer les questions
             generateQuestions();
+    
+            // Reprendre à la dernière question non réussie
+            currentQuestionIndex = progress.currentQuestionIndex || 0;
+    
+            // Vérifier que l'index ne dépasse pas le nombre de questions
+            if (currentQuestionIndex >= currentLevel.questionsCount) {
+                currentQuestionIndex = 0; // Recommencer depuis le début si déjà fini
+            }
+    
+            // Réinitialiser score et erreurs pour la session en cours
+            score = 0;
+            correctAnswers = 0;
+    
             setupQuiz();
             showQuestion();
-
+    
             document.getElementById('levelSelector').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
             document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function saveQuestionProgress() {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+    
+            if (currentStudentName && students[currentStudentName]) {
+                const student = students[currentStudentName];
+        
+                if (!student.resultatsParJeu.quiz) {
+                    student.resultatsParJeu.quiz = {
+                        partiesJouees: 0,
+                        meilleurScore: 0,
+                        bonnesReponses: 0,
+                        questionsTotal: 0,
+                        level1Completed: false,
+                        level1Progress: { currentQuestionIndex: 0 },
+                        level2Progress: { currentQuestionIndex: 0 }
+                    };
+                }
+        
+                const quizStats = student.resultatsParJeu.quiz;
+        
+                // Sauvegarder la progression actuelle
+                if (currentLevelNumber) {
+                    quizStats[`level${currentLevelNumber}Progress`] = {
+                        currentQuestionIndex: currentQuestionIndex + 1 // +1 car on passe à la suivante
+                    };
+                }
+        
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            }
+        }
+
+        function getLevelProgress(level) {
+            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+            const currentStudentName = getCurrentStudentName();
+    
+            if (currentStudentName && students[currentStudentName]) {
+                const quizStats = students[currentStudentName].resultatsParJeu?.quiz || {};
+                const levelProgress = quizStats[`level${level}Progress`] || {};
+        
+                return {
+                    currentQuestionIndex: levelProgress.currentQuestionIndex || 0
+                };
+            }
+    
+            return {
+                currentQuestionIndex: 0
+            };
         }
 
         function generateQuestions() {
@@ -717,38 +784,41 @@
 
             if (isCorrect) {
                 isAnswering = true;
-                
+        
                 document.querySelectorAll('.choice-btn').forEach(btn => {
                     btn.classList.add('disabled');
                 });
-                
+        
                 buttonElement.classList.add('correct');
                 feedback.textContent = `✅ Correct ! C'est bien la lettre "${question.letter.toUpperCase()}"`;
                 feedback.className = 'feedback correct';
                 correctAnswers++;
                 score += 10;
-                
+        
+                // Sauvegarder la progression AVANT de passer à la question suivante
+                saveQuestionProgress();
+        
                 playLetterSound(question.letter);
-                
+        
                 // Passer automatiquement à la question suivante après le son + 1 seconde
                 setTimeout(() => {
                     nextQuestion();
-                }, 2000); // Durée approximative du son (1s) + 1 seconde de délai
+                }, 2000);
             } else {
                 // Bloquer les clics pendant la durée du son d'erreur
                 isAnswering = true;
-                
+        
                 document.querySelectorAll('.choice-btn').forEach(btn => {
                     btn.classList.add('disabled');
                 });
-                
+        
                 buttonElement.classList.add('wrong');
                 feedback.textContent = `❌ Ce n'est pas la bonne lettre, réessaie !`;
                 feedback.className = 'feedback wrong';
-                
+        
                 playWrongAnswerSound(selectedLetter);
-                
-                // Réactiver les clics après la fin du son (environ 4 secondes)
+        
+                // Réactiver les clics après la fin du son
                 setTimeout(() => {
                     isAnswering = false;
                     document.querySelectorAll('.choice-btn').forEach(btn => {
@@ -757,11 +827,12 @@
                         }
                     });
                     feedback.textContent = '';
-                }, 4000); // Durée totale des sons d'erreur
+                }, 4000);
             }
 
             document.getElementById('score').textContent = score;
         }
+        
         function playWrongAnswerSound(wrongLetter) {
             try {
                 const clickAudio = new Audio('sounds/letters/clic.mp3');
@@ -796,7 +867,16 @@
 
         function nextQuestion() {
             currentQuestionIndex++;
-            showQuestion();
+    
+            // Vérifier si c'était la dernière question
+            if (currentQuestionIndex >= questions.length) {
+                // Terminer le quiz
+                setTimeout(() => {
+                    endQuiz();
+                }, 500);
+            } else {
+                showQuestion();
+            }
         }
 
         function endQuiz() {
@@ -806,55 +886,65 @@
             document.getElementById('finalTotal').textContent = questions.length;
             document.getElementById('finalPercent').textContent = percentage + '%';
             document.getElementById('finalScore').textContent = score;
-
+    
             saveQuizStats(correctAnswers, questions.length, score);
-
+    
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'block';
     
-            // ⬇️ AJOUT ICI : Retourner automatiquement à la sélection des niveaux après 3 secondes
-            // Retourner automatiquement à la sélection des niveaux après 3 secondes
+            // Retourner automatiquement à la sélection des niveaux après 2 secondes
             setTimeout(() => {
                 showLevelSelector();
-            }, 3000);;
+            }, 2000);
         }
+        
         function saveQuizStats(correct, total, finalScore) {
             try {
                 const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
                 const currentStudentName = getCurrentStudentName();
-                
+        
                 if (currentStudentName && students[currentStudentName]) {
                     const student = students[currentStudentName];
-                    
+            
                     student.statistiques.sessionsJouees++;
-                    
+            
                     if (!student.resultatsParJeu.quiz) {
                         student.resultatsParJeu.quiz = {
                             partiesJouees: 0,
                             meilleurScore: 0,
                             bonnesReponses: 0,
                             questionsTotal: 0,
-                            level1Completed: false
+                            level1Completed: false,
+                            level1Progress: { currentQuestionIndex: 0 },
+                            level2Progress: { currentQuestionIndex: 0 }
                         };
                     }
-                    
+            
                     const quizStats = student.resultatsParJeu.quiz;
                     quizStats.partiesJouees++;
                     quizStats.meilleurScore = Math.max(quizStats.meilleurScore, finalScore);
                     quizStats.bonnesReponses += correct;
                     quizStats.questionsTotal += total;
-                    
-                    // Marquer le niveau comme complété
-                    if (currentLevelNumber === 1) {
+            
+                    // Marquer le niveau comme complété et réinitialiser sa progression
+                    if (currentLevelNumber === 1 && percentage >= 80) {
                         quizStats.level1Completed = true;
+                        quizStats.level1Progress = { currentQuestionIndex: 0 }; // Réinitialiser
+                    } else if (currentLevelNumber === 2 && percentage >= 80) {
+                        // Pour le niveau 2, on peut aussi réinitialiser
+                        quizStats.level2Progress = { currentQuestionIndex: 0 }; // Réinitialiser
                     }
-                    
+            
                     localStorage.setItem('alphabet_students', JSON.stringify(students));
+            
+                    // Mettre à jour les boutons de niveau
+                    updateLevelButtons();
                 }
             } catch (error) {
                 console.log('Erreur lors de la sauvegarde:', error);
             }
         }
+
 
         function getCurrentStudentName() {
             try {
@@ -877,12 +967,25 @@
         }
 
         function restartQuiz() {
-            if (currentLevel) {
-                generateQuestions();
-                setupQuiz();
-                showQuestion();
+            if (currentLevelNumber) {
+                // Reprendre la progression sauvegardée
+                const progress = getLevelProgress(currentLevelNumber);
+                currentQuestionIndex = progress.currentQuestionIndex || 0;
+        
+                // Vérifier que l'index ne dépasse pas le nombre de questions
+                if (currentQuestionIndex >= currentLevel.questionsCount) {
+                    currentQuestionIndex = 0;
+                }
+        
+                // Réinitialiser seulement score et erreurs de la session
+                score = 0;
+                correctAnswers = 0;
+                document.getElementById('score').textContent = score;
+        
                 document.getElementById('gameOver').style.display = 'none';
                 document.getElementById('gameArea').style.display = 'block';
+        
+                showQuestion();
             }
         }
 
