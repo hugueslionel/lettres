@@ -407,7 +407,7 @@
             </div>
             <div class="game-info">
                 <div class="score">Score: <span id="score">0</span></div>
-                <div class="progress">Question: <span id="currentQuestion">1</span>/<span id="totalQuestions">10</span></div>
+                <div class="progress">Question: <span id="currentQuestion">1</span>/<span id="totalQuestions">21</span></div>
             </div>
         </div>
 
@@ -417,12 +417,12 @@
             <div class="level-buttons">
                 <button class="level-btn easy" onclick="startLevel(1)" id="level1Btn">
                     <div>🟢 Niveau 1 - Facile</div>
-                    <small>Majuscules et Script<br>Lettres simples</small>
+                    <small>Majuscules et Script<br>21 lettres</small>
                 </button>
                 <button class="level-btn hard" onclick="startLevel(2)" id="level2Btn" disabled>
                     <span class="lock-icon">🔒</span>
                     <div>🔴 Niveau 2 - Difficile</div>
-                    <small>3 écritures + lettres pièges<br>Défi expert !</small>
+                    <small>3 écritures + lettres pièges<br>21 lettres</small>
                 </button>
             </div>
              <!-- AJOUTER CE BOUTON ICI -->
@@ -482,21 +482,23 @@
     </div>
 
     <script>
-        // Configuration des niveaux
+        // Configuration des niveaux - TOUJOURS 21 lettres
+        const ALL_LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v'];
+        
         const LEVELS = {
             1: {
                 name: "Facile",
                 writings: ['majuscule', 'script'],
-                letters: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v'],
-                questionsCount: 10,
+                letters: ALL_LETTERS,
+                questionsCount: ALL_LETTERS.length, // Toujours 21 questions
                 choicesCount: 4,
-                trapLetters: []
+                trapLetters: {}
             },
             2: {
                 name: "Difficile",
                 writings: ['majuscule', 'script', 'cursive'],
-                letters: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v'],
-                questionsCount: 15,
+                letters: ALL_LETTERS,
+                questionsCount: ALL_LETTERS.length, // Toujours 21 questions
                 choicesCount: 6,
                 trapLetters: {
                     'b': ['d', 'p', 'q'],
@@ -582,7 +584,7 @@
             // Récupérer la progression sauvegardée pour ce niveau
             const progress = getLevelProgress(level);
     
-            // Générer les questions
+            // Générer les questions (toujours 21)
             generateQuestions();
     
             // Reprendre à la dernière question non réussie
@@ -605,7 +607,7 @@
             document.getElementById('gameOver').style.display = 'none';
         }
 
-        function saveQuestionProgress() {
+        function saveQuestionProgress(isCorrect) {
             const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
             const currentStudentName = getCurrentStudentName();
     
@@ -626,10 +628,23 @@
         
                 const quizStats = student.resultatsParJeu.quiz;
         
-                // Sauvegarder la progression actuelle
+                // Sauvegarder la progression actuelle (on passe toujours à la suivante)
                 if (currentLevelNumber) {
+                    let nextQuestionIndex = currentQuestionIndex;
+                    
+                    // Si c'est une bonne réponse, on passe à la suivante
+                    // Si c'est une mauvaise, on reste sur la même question
+                    if (isCorrect) {
+                        nextQuestionIndex = currentQuestionIndex + 1;
+                    }
+                    
+                    // Si on a dépassé, on recommence
+                    if (nextQuestionIndex >= currentLevel.questionsCount) {
+                        nextQuestionIndex = 0;
+                    }
+                    
                     quizStats[`level${currentLevelNumber}Progress`] = {
-                        currentQuestionIndex: currentQuestionIndex + 1 // +1 car on passe à la suivante
+                        currentQuestionIndex: nextQuestionIndex
                     };
                 }
         
@@ -657,23 +672,28 @@
 
         function generateQuestions() {
             questions = [];
-            const letters = [...currentLevel.letters]; // Copie du tableau
+            const letters = [...currentLevel.letters]; // Toujours les 21 lettres
             const writings = currentLevel.writings;
             
-            // Mélanger les lettres pour avoir un ordre aléatoire
+            // On va mélanger les lettres pour avoir un ordre aléatoire
+            // mais on utilisera TOUTES les 21 lettres
             const shuffledLetters = shuffleArray(letters);
             
-            // Prendre uniquement le nombre de lettres nécessaires (sans doublons)
-            const selectedLetters = shuffledLetters.slice(0, currentLevel.questionsCount);
-
-            for (let i = 0; i < selectedLetters.length; i++) {
-                const letter = selectedLetters[i];
+            // Pour chaque lettre, créer une question
+            for (let i = 0; i < shuffledLetters.length; i++) {
+                const letter = shuffledLetters[i];
                 
+                // Choisir aléatoirement l'écriture de la question
                 const questionWriting = writings[Math.floor(Math.random() * writings.length)];
+                
+                // Choisir une écriture différente pour la réponse
                 let answerWriting;
-                do {
-                    answerWriting = writings[Math.floor(Math.random() * writings.length)];
-                } while (answerWriting === questionWriting && writings.length > 1);
+                if (writings.length > 1) {
+                    const otherWritings = writings.filter(w => w !== questionWriting);
+                    answerWriting = otherWritings[Math.floor(Math.random() * otherWritings.length)];
+                } else {
+                    answerWriting = questionWriting;
+                }
 
                 const choices = generateChoices(letter, answerWriting);
 
@@ -691,20 +711,26 @@
             const choices = [correctLetter];
             const availableLetters = currentLevel.letters.filter(l => l !== correctLetter);
             
+            // Ajouter les lettres pièges si elles existent
             if (currentLevel.trapLetters[correctLetter]) {
                 const traps = currentLevel.trapLetters[correctLetter];
-                traps.forEach(trap => {
-                    if (choices.length < currentLevel.choicesCount && availableLetters.includes(trap)) {
-                        choices.push(trap);
-                        availableLetters.splice(availableLetters.indexOf(trap), 1);
-                    }
+                // Filtrer pour ne garder que les pièges qui sont dans les lettres disponibles
+                const availableTraps = traps.filter(trap => availableLetters.includes(trap));
+                
+                // Ajouter jusqu'à 2 pièges maximum
+                const trapsToAdd = availableTraps.slice(0, Math.min(2, availableTraps.length));
+                trapsToAdd.forEach(trap => {
+                    choices.push(trap);
+                    availableLetters.splice(availableLetters.indexOf(trap), 1);
                 });
             }
 
-            while (choices.length < currentLevel.choicesCount) {
-                const randomLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
+            // Ajouter des lettres aléatoires jusqu'à atteindre le nombre requis
+            while (choices.length < currentLevel.choicesCount && availableLetters.length > 0) {
+                const randomIndex = Math.floor(Math.random() * availableLetters.length);
+                const randomLetter = availableLetters[randomIndex];
                 choices.push(randomLetter);
-                availableLetters.splice(availableLetters.indexOf(randomLetter), 1);
+                availableLetters.splice(randomIndex, 1);
             }
 
             return shuffleArray(choices);
@@ -720,7 +746,7 @@
         }
 
         function setupQuiz() {
-            currentQuestionIndex = 0;
+            // Réinitialiser seulement pour une nouvelle session
             score = 0;
             correctAnswers = 0;
             isAnswering = false;
@@ -796,13 +822,18 @@
                 score += 10;
         
                 // Sauvegarder la progression AVANT de passer à la question suivante
-                saveQuestionProgress();
+                saveQuestionProgress(true);
         
                 playLetterSound(question.letter);
         
                 // Passer automatiquement à la question suivante après le son + 1 seconde
                 setTimeout(() => {
-                    nextQuestion();
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex >= questions.length) {
+                        endQuiz();
+                    } else {
+                        showQuestion();
+                    }
                 }, 2000);
             } else {
                 // Bloquer les clics pendant la durée du son d'erreur
@@ -817,6 +848,9 @@
                 feedback.className = 'feedback wrong';
         
                 playWrongAnswerSound(selectedLetter);
+        
+                // Sauvegarder la progression (mauvaise réponse)
+                saveQuestionProgress(false);
         
                 // Réactiver les clics après la fin du son
                 setTimeout(() => {
@@ -892,10 +926,10 @@
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'block';
     
-            // Retourner automatiquement à la sélection des niveaux après 2 secondes
+            // Retourner automatiquement à la sélection des niveaux après 5 secondes
             setTimeout(() => {
                 showLevelSelector();
-            }, 2000);
+            }, 5000);
         }
         
         function saveQuizStats(correct, total, finalScore) {
@@ -926,13 +960,12 @@
                     quizStats.bonnesReponses += correct;
                     quizStats.questionsTotal += total;
             
-                    // Marquer le niveau comme complété et réinitialiser sa progression
+                    // Marquer le niveau comme complété si score >= 80%
+                    const percentage = Math.round((correct / total) * 100);
                     if (currentLevelNumber === 1 && percentage >= 80) {
                         quizStats.level1Completed = true;
-                        quizStats.level1Progress = { currentQuestionIndex: 0 }; // Réinitialiser
-                    } else if (currentLevelNumber === 2 && percentage >= 80) {
-                        // Pour le niveau 2, on peut aussi réinitialiser
-                        quizStats.level2Progress = { currentQuestionIndex: 0 }; // Réinitialiser
+                        // Réinitialiser la progression pour pouvoir recommencer
+                        quizStats.level1Progress = { currentQuestionIndex: 0 };
                     }
             
                     localStorage.setItem('alphabet_students', JSON.stringify(students));
@@ -944,7 +977,6 @@
                 console.log('Erreur lors de la sauvegarde:', error);
             }
         }
-
 
         function getCurrentStudentName() {
             try {
@@ -968,23 +1000,22 @@
 
         function restartQuiz() {
             if (currentLevelNumber) {
-                // Reprendre la progression sauvegardée
-                const progress = getLevelProgress(currentLevelNumber);
-                currentQuestionIndex = progress.currentQuestionIndex || 0;
-        
-                // Vérifier que l'index ne dépasse pas le nombre de questions
-                if (currentQuestionIndex >= currentLevel.questionsCount) {
-                    currentQuestionIndex = 0;
-                }
-        
-                // Réinitialiser seulement score et erreurs de la session
+                // Réinitialiser complètement pour une nouvelle session
+                currentQuestionIndex = 0;
                 score = 0;
                 correctAnswers = 0;
+                isAnswering = false;
+                
+                // Régénérer les questions (mélange aléatoire)
+                generateQuestions();
+                
+                // Réinitialiser l'affichage
                 document.getElementById('score').textContent = score;
-        
+                document.getElementById('currentQuestion').textContent = 1;
+                
                 document.getElementById('gameOver').style.display = 'none';
                 document.getElementById('gameArea').style.display = 'block';
-        
+                
                 showQuestion();
             }
         }
