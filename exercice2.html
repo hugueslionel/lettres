@@ -545,11 +545,18 @@
             
             // Niveau 2 débloqué si niveau 1 complété
             const level2Btn = document.getElementById('level2Btn');
+            console.log('Progression niveau 1:', progress.level1Completed); // Debug
+            
             if (progress.level1Completed) {
                 level2Btn.disabled = false;
-                level2Btn.querySelector('.lock-icon')?.remove();
+                // Retirer l'icône de cadenas si elle existe
+                const lockIcon = level2Btn.querySelector('.lock-icon');
+                if (lockIcon) {
+                    lockIcon.remove();
+                }
             } else {
                 level2Btn.disabled = true;
+                // Ajouter l'icône de cadenas si elle n'existe pas
                 if (!level2Btn.querySelector('.lock-icon')) {
                     const lockIcon = document.createElement('span');
                     lockIcon.className = 'lock-icon';
@@ -560,19 +567,31 @@
         }
         
         function getQuizProgress() {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                const quizStats = students[currentStudentName].resultatsParJeu.quiz || {};
+            try {
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const currentStudentName = getCurrentStudentName();
+                
+                console.log('Élève courant:', currentStudentName); // Debug
+                console.log('Données élèves:', students); // Debug
+                
+                if (currentStudentName && students[currentStudentName]) {
+                    const quizStats = students[currentStudentName].resultatsParJeu?.quiz || {};
+                    console.log('Statistiques quiz:', quizStats); // Debug
+                    
+                    return {
+                        level1Completed: quizStats.level1Completed || false
+                    };
+                }
+                
                 return {
-                    level1Completed: quizStats.level1Completed || false
+                    level1Completed: false
+                };
+            } catch (error) {
+                console.log('Erreur lors de la récupération de la progression:', error);
+                return {
+                    level1Completed: false
                 };
             }
-            
-            return {
-                level1Completed: false
-            };
         }
 
         function startLevel(level) {
@@ -608,66 +627,77 @@
         }
 
         function saveQuestionProgress(isCorrect) {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
+            try {
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const currentStudentName = getCurrentStudentName();
     
-            if (currentStudentName && students[currentStudentName]) {
-                const student = students[currentStudentName];
-        
-                if (!student.resultatsParJeu.quiz) {
-                    student.resultatsParJeu.quiz = {
-                        partiesJouees: 0,
-                        meilleurScore: 0,
-                        bonnesReponses: 0,
-                        questionsTotal: 0,
-                        level1Completed: false,
-                        level1Progress: { currentQuestionIndex: 0 },
-                        level2Progress: { currentQuestionIndex: 0 }
-                    };
-                }
-        
-                const quizStats = student.resultatsParJeu.quiz;
-        
-                // Sauvegarder la progression actuelle (on passe toujours à la suivante)
-                if (currentLevelNumber) {
-                    let nextQuestionIndex = currentQuestionIndex;
-                    
-                    // Si c'est une bonne réponse, on passe à la suivante
-                    // Si c'est une mauvaise, on reste sur la même question
-                    if (isCorrect) {
-                        nextQuestionIndex = currentQuestionIndex + 1;
+                if (currentStudentName && students[currentStudentName]) {
+                    const student = students[currentStudentName];
+            
+                    if (!student.resultatsParJeu.quiz) {
+                        student.resultatsParJeu.quiz = {
+                            partiesJouees: 0,
+                            meilleurScore: 0,
+                            bonnesReponses: 0,
+                            questionsTotal: 0,
+                            level1Completed: false,
+                            level1Progress: { currentQuestionIndex: 0 },
+                            level2Progress: { currentQuestionIndex: 0 }
+                        };
                     }
-                    
-                    // Si on a dépassé, on recommence
-                    if (nextQuestionIndex >= currentLevel.questionsCount) {
-                        nextQuestionIndex = 0;
+            
+                    const quizStats = student.resultatsParJeu.quiz;
+            
+                    // Sauvegarder la progression actuelle (on passe toujours à la suivante)
+                    if (currentLevelNumber) {
+                        let nextQuestionIndex = currentQuestionIndex;
+                        
+                        // Si c'est une bonne réponse, on passe à la suivante
+                        // Si c'est une mauvaise, on reste sur la même question
+                        if (isCorrect) {
+                            nextQuestionIndex = currentQuestionIndex + 1;
+                        }
+                        
+                        // Si on a dépassé, on recommence
+                        if (nextQuestionIndex >= currentLevel.questionsCount) {
+                            nextQuestionIndex = 0;
+                        }
+                        
+                        quizStats[`level${currentLevelNumber}Progress`] = {
+                            currentQuestionIndex: nextQuestionIndex
+                        };
                     }
-                    
-                    quizStats[`level${currentLevelNumber}Progress`] = {
-                        currentQuestionIndex: nextQuestionIndex
-                    };
+            
+                    localStorage.setItem('alphabet_students', JSON.stringify(students));
                 }
-        
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
+            } catch (error) {
+                console.log('Erreur lors de la sauvegarde de progression:', error);
             }
         }
 
         function getLevelProgress(level) {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
+            try {
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const currentStudentName = getCurrentStudentName();
     
-            if (currentStudentName && students[currentStudentName]) {
-                const quizStats = students[currentStudentName].resultatsParJeu?.quiz || {};
-                const levelProgress = quizStats[`level${level}Progress`] || {};
-        
+                if (currentStudentName && students[currentStudentName]) {
+                    const quizStats = students[currentStudentName].resultatsParJeu?.quiz || {};
+                    const levelProgress = quizStats[`level${level}Progress`] || {};
+            
+                    return {
+                        currentQuestionIndex: levelProgress.currentQuestionIndex || 0
+                    };
+                }
+    
                 return {
-                    currentQuestionIndex: levelProgress.currentQuestionIndex || 0
+                    currentQuestionIndex: 0
+                };
+            } catch (error) {
+                console.log('Erreur lors de la récupération de progression:', error);
+                return {
+                    currentQuestionIndex: 0
                 };
             }
-    
-            return {
-                currentQuestionIndex: 0
-            };
         }
 
         function generateQuestions() {
@@ -966,6 +996,7 @@
                         quizStats.level1Completed = true;
                         // Réinitialiser la progression pour pouvoir recommencer
                         quizStats.level1Progress = { currentQuestionIndex: 0 };
+                        console.log('Niveau 1 marqué comme complété!'); // Debug
                     }
             
                     localStorage.setItem('alphabet_students', JSON.stringify(students));
@@ -974,7 +1005,7 @@
                     updateLevelButtons();
                 }
             } catch (error) {
-                console.log('Erreur lors de la sauvegarde:', error);
+                console.log('Erreur lors de la sauvegarde des stats:', error);
             }
         }
 
