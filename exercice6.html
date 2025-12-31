@@ -450,8 +450,6 @@
 
 
 
-    
-
     <script>
         const ALPHABET = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
                           'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
@@ -489,7 +487,7 @@
 
                 const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
                 if (!students[currentStudent.nom]) {
-                    console.log('Étudiant non trouvé dans localStorage');
+                    console.log('Étudiant non trouvé, création...');
                     // Créer une entrée pour cet étudiant
                     students[currentStudent.nom] = {
                         resultatsParJeu: {
@@ -511,7 +509,7 @@
 
                 const student = students[currentStudent.nom];
                 
-                // Initialiser la structure si elle n'existe pas ou si elle est mal formée
+                // Initialiser la structure si elle n'existe pas
                 if (!student.resultatsParJeu || !student.resultatsParJeu.train) {
                     console.log('Structure train non trouvée, initialisation...');
                     student.resultatsParJeu = student.resultatsParJeu || {};
@@ -526,17 +524,15 @@
                     localStorage.setItem('alphabet_students', JSON.stringify(students));
                 }
                 
-                // S'assurer que tous les champs nécessaires existent
                 const trainData = student.resultatsParJeu.train;
                 
+                // S'assurer que la progression existe
                 if (!trainData.progression) {
-                    console.log('Progression non trouvée, initialisation...');
                     trainData.progression = {
                         niveau1: { currentStage: 0, completed: false, unlocked: true },
                         niveau2: { currentStage: 0, completed: false, unlocked: false },
                         niveau3: { currentStage: 0, completed: false, unlocked: false }
                     };
-                    localStorage.setItem('alphabet_students', JSON.stringify(students));
                 }
                 
                 // Vérifier chaque niveau
@@ -546,25 +542,10 @@
                         trainData.progression[levelKey] = { 
                             currentStage: 0, 
                             completed: false, 
-                            unlocked: i === 1 // Seul le niveau 1 est débloqué au début
+                            unlocked: i === 1
                         };
-                    } else {
-                        // S'assurer que tous les champs existent
-                        const level = trainData.progression[levelKey];
-                        level.currentStage = level.currentStage || 0;
-                        level.completed = level.completed || false;
-                        
-                        // Pour le niveau 1, toujours débloqué
-                        if (i === 1) {
-                            level.unlocked = true;
-                        } else {
-                            level.unlocked = level.unlocked || false;
-                        }
                     }
                 }
-                
-                // Sauvegarder les corrections
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
                 
                 studentProgress = trainData.progression;
                 gameState = trainData.currentGame || null;
@@ -610,14 +591,15 @@
                 // Sauvegarder la progression
                 student.resultatsParJeu.train.progression = studentProgress;
                 
-                // Sauvegarder l'état de la partie en cours
+                // Sauvegarder l'état de la partie en cours (sauvegarde continue)
                 if (currentLevel) {
                     student.resultatsParJeu.train.currentGame = {
                         level: currentLevel.num,
                         stage: currentStage,
                         filledSlots: getFilledSlots(),
                         availableLetters: getAvailableLetters(),
-                        selectedLetter: selectedLetter
+                        selectedLetter: selectedLetter,
+                        emptySlots: emptySlots // Sauvegarder aussi les slots vides
                     };
                 } else {
                     student.resultatsParJeu.train.currentGame = null;
@@ -648,26 +630,6 @@
             return available;
         }
 
-        function updateProgressInfo() {
-            const progressInfo = document.getElementById('progressInfo');
-            if (!progressInfo || !studentProgress) return;
-            
-            let totalStages = 0;
-            let completedStages = 0;
-            
-            // Calculer la progression globale
-            Object.keys(studentProgress).forEach(levelKey => {
-                const levelNum = parseInt(levelKey.charAt(levelKey.length - 1));
-                const level = studentProgress[levelKey];
-                const levelStages = LEVELS[levelNum]?.stages?.length || 0;
-                totalStages += levelStages;
-                completedStages += level.currentStage || 0;
-            });
-            
-            const progressPercent = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
-            progressInfo.textContent = `Progression: ${completedStages}/${totalStages} étapes (${progressPercent}%)`;
-        }
-
         function showLevelSelector() {
             const container = document.getElementById('levelCards');
             if (!container) return;
@@ -686,8 +648,6 @@
                 
                 const card = document.createElement('div');
                 card.className = 'level-card';
-                
-                console.log(`Niveau ${levelNum}: unlocked=${progress.unlocked}, completed=${progress.completed}`);
                 
                 if (!progress.unlocked) {
                     card.classList.add('locked');
@@ -726,8 +686,6 @@
             document.getElementById('levelSelector').style.display = 'block';
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('transitionMessage').classList.remove('show');
-            
-            updateProgressInfo();
         }
 
         function startLevel(levelNum) {
@@ -747,6 +705,8 @@
             }
             
             currentLevel = { num: levelNum, ...LEVELS[levelNum] };
+            
+            // Toujours commencer à l'étape enregistrée dans la progression
             currentStage = progress.currentStage || 0;
             
             console.log(`Niveau ${levelNum}, étape ${currentStage + 1}/${currentLevel.stages.length}`);
@@ -756,7 +716,7 @@
                 console.log('Restauration de la partie en cours');
                 restoreGameState();
             } else {
-                console.log('Nouvelle partie');
+                console.log('Nouvelle étape');
                 setupNewGame();
             }
             
@@ -780,16 +740,18 @@
         }
 
         function restoreGameState() {
-            if (!gameState) return;
+            if (!gameState) {
+                setupNewGame();
+                return;
+            }
             
             selectedLetter = gameState.selectedLetter;
+            emptySlots = gameState.emptySlots || [];
             
             document.getElementById('stageInfo').textContent = 
                 `Niveau ${currentLevel.num} - Étape ${currentStage + 1}/${currentLevel.stages.length}`;
             
-            // Recréer l'état du train
-            const lettersToPlace = currentLevel.stages[currentStage];
-            emptySlots = selectRandomSlots(lettersToPlace);
+            // Recréer le train avec les slots vides sauvegardés
             createTrain();
             
             // Remplir les wagons déjà complétés
@@ -813,7 +775,7 @@
             createLettersPool();
             
             // Marquer comme utilisées les lettres déjà placées
-            if (gameState.filledSlots && gameState.availableLetters) {
+            if (gameState.filledSlots) {
                 const allPlacedLetters = gameState.filledSlots.map(i => ALPHABET[i]);
                 document.querySelectorAll('.letter-item').forEach(item => {
                     if (allPlacedLetters.includes(item.dataset.letter)) {
@@ -877,8 +839,17 @@
             
             pool.innerHTML = '';
 
+            // Commencer avec toutes les lettres des slots vides
             const lettersToPlace = emptySlots.map(i => ALPHABET[i]);
-            const shuffled = shuffleArray([...lettersToPlace]);
+            
+            // Retirer les lettres déjà placées
+            const filledSlots = getFilledSlots();
+            const availableLetters = lettersToPlace.filter(letter => {
+                const index = ALPHABET.indexOf(letter);
+                return !filledSlots.includes(index);
+            });
+            
+            const shuffled = shuffleArray([...availableLetters]);
 
             shuffled.forEach(letter => {
                 const letterDiv = document.createElement('div');
@@ -919,7 +890,7 @@
             element.classList.add('selected');
             playLetterSound(letter);
             
-            // Sauvegarder après sélection
+            // Sauvegarde continue
             saveProgress();
         }
 
@@ -954,7 +925,7 @@
                 playLetterSound(selectedLetter);
                 selectedLetter = null;
                 
-                // Sauvegarder après placement
+                // Sauvegarde continue
                 saveProgress();
                 
                 checkStageComplete();
@@ -980,11 +951,11 @@
             if (!currentProgress) return;
             
             // Avancer à l'étape suivante
-            currentProgress.currentStage = (currentProgress.currentStage || 0) + 1;
+            currentProgress.currentStage++;
             
-            // Vérifier si le niveau est terminé
+            // Vérifier si le niveau est terminé (toutes les étapes faites)
             if (currentProgress.currentStage >= currentLevel.stages.length) {
-                // Niveau terminé : réinitialiser la progression
+                // Niveau terminé : réinitialiser le niveau à 0
                 currentProgress.currentStage = 0;
                 currentProgress.completed = true;
                 
@@ -998,10 +969,11 @@
                 }
                 
                 // Effacer la sauvegarde de la partie en cours
+                gameState = null;
                 saveProgress();
                 showTransition(true);
             } else {
-                // Étape suivante
+                // Étape suivante : on garde la progression
                 saveProgress();
                 showTransition(false);
             }
@@ -1029,14 +1001,11 @@
                 btn.textContent = 'Continuer';
                 btn.onclick = () => {
                     message.classList.remove('show');
-                    // Effacer la sauvegarde de la partie précédente
-                    const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
-                    const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-                    if (students[currentStudent.nom]) {
-                        students[currentStudent.nom].resultatsParJeu.train.currentGame = null;
-                        localStorage.setItem('alphabet_students', JSON.stringify(students));
-                    }
+                    // Effacer la sauvegarde de la partie précédente pour commencer une nouvelle étape
+                    gameState = null;
+                    saveProgress();
                     
+                    // Passer à l'étape suivante
                     setupNewGame();
                     document.getElementById('gameArea').style.display = 'block';
                 };
@@ -1072,15 +1041,10 @@
 
         function backToLevels() {
             // Effacer la sauvegarde de la partie en cours
-            const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            if (students[currentStudent.nom]) {
-                students[currentStudent.nom].resultatsParJeu.train.currentGame = null;
-                localStorage.setItem('alphabet_students', JSON.stringify(students));
-            }
+            gameState = null;
+            saveProgress();
             
             currentLevel = null;
-            gameState = null;
             showLevelSelector();
         }
 
@@ -1090,3 +1054,6 @@
     </script>
 </body>
 </html>
+    
+
+   
