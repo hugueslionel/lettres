@@ -450,8 +450,6 @@
 
 
 
-    
-
     <script>
         const ALPHABET = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
                           'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
@@ -467,7 +465,6 @@
         let selectedLetter = null;
         let emptySlots = [];
         let studentProgress = null;
-        let gameState = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             const savedStudent = sessionStorage.getItem('currentStudent');
@@ -496,7 +493,7 @@
                                     niveau2: { currentStage: 0, completed: false, unlocked: false },
                                     niveau3: { currentStage: 0, completed: false, unlocked: false }
                                 },
-                                currentGame: null
+                                gameStates: {} // Stocker l'état de chaque étape en cours
                             }
                         }
                     };
@@ -516,7 +513,7 @@
                             niveau2: { currentStage: 0, completed: false, unlocked: false },
                             niveau3: { currentStage: 0, completed: false, unlocked: false }
                         },
-                        currentGame: null
+                        gameStates: {}
                     };
                 }
                 
@@ -529,9 +526,13 @@
                     };
                 }
                 
-                // Charger la progression et l'état du jeu
+                // S'assurer que gameStates existe
+                if (!student.resultatsParJeu.train.gameStates) {
+                    student.resultatsParJeu.train.gameStates = {};
+                }
+                
+                // Charger la progression
                 studentProgress = student.resultatsParJeu.train.progression;
-                gameState = student.resultatsParJeu.train.currentGame;
                 
                 // S'assurer que le niveau 1 est toujours débloqué
                 studentProgress.niveau1.unlocked = true;
@@ -546,7 +547,6 @@
                     niveau2: { currentStage: 0, completed: false, unlocked: false },
                     niveau3: { currentStage: 0, completed: false, unlocked: false }
                 };
-                gameState = null;
             }
         }
 
@@ -565,27 +565,46 @@
                     student.resultatsParJeu = {};
                 }
                 if (!student.resultatsParJeu.train) {
-                    student.resultatsParJeu.train = {};
+                    student.resultatsParJeu.train = {
+                        progression: {},
+                        gameStates: {}
+                    };
                 }
                 
                 // Sauvegarder la progression
                 student.resultatsParJeu.train.progression = studentProgress;
                 
-                // Sauvegarder l'état de la partie en cours si on est dans un niveau
-                if (currentLevel && emptySlots && emptySlots.length > 0) {
-                    student.resultatsParJeu.train.currentGame = {
+                // Sauvegarder l'état du jeu en cours si on est dans un niveau
+                if (currentLevel) {
+                    const gameStateKey = `niveau${currentLevel.num}_stage${currentStage}`;
+                    
+                    // Récupérer les wagons remplis
+                    const filledSlots = [];
+                    document.querySelectorAll('.wagon.filled').forEach(wagon => {
+                        filledSlots.push(parseInt(wagon.dataset.index));
+                    });
+                    
+                    // Récupérer les lettres disponibles
+                    const availableLetters = [];
+                    document.querySelectorAll('.letter-item:not(.used)').forEach(item => {
+                        availableLetters.push(item.dataset.letter);
+                    });
+                    
+                    // Sauvegarder l'état
+                    if (!student.resultatsParJeu.train.gameStates) {
+                        student.resultatsParJeu.train.gameStates = {};
+                    }
+                    
+                    student.resultatsParJeu.train.gameStates[gameStateKey] = {
                         level: currentLevel.num,
                         stage: currentStage,
-                        emptySlots: [...emptySlots], // Copie des slots vides
-                        filledSlots: getFilledSlots(),
-                        selectedLetter: selectedLetter
+                        emptySlots: [...emptySlots],
+                        filledSlots: filledSlots,
+                        selectedLetter: selectedLetter,
+                        availableLetters: availableLetters
                     };
-                } else {
-                    // Si on n'est pas dans un jeu, ne pas effacer le currentGame
-                    // pour pouvoir reprendre plus tard
-                    if (!currentLevel && gameState) {
-                        student.resultatsParJeu.train.currentGame = gameState;
-                    }
+                    
+                    console.log('État de jeu sauvegardé pour:', gameStateKey, student.resultatsParJeu.train.gameStates[gameStateKey]);
                 }
                 
                 localStorage.setItem('alphabet_students', JSON.stringify(students));
@@ -595,13 +614,47 @@
             }
         }
 
-        function getFilledSlots() {
-            const filled = [];
-            const wagons = document.querySelectorAll('.wagon.filled');
-            wagons.forEach(wagon => {
-                filled.push(parseInt(wagon.dataset.index));
-            });
-            return filled;
+        function loadGameState(levelNum, stageNum) {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                if (!currentStudent) return null;
+
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                if (!students[currentStudent.nom]) return null;
+
+                const student = students[currentStudent.nom];
+                const gameStates = student.resultatsParJeu?.train?.gameStates;
+                
+                if (!gameStates) return null;
+                
+                const gameStateKey = `niveau${levelNum}_stage${stageNum}`;
+                return gameStates[gameStateKey] || null;
+                
+            } catch (error) {
+                console.log('Erreur chargement état de jeu:', error);
+                return null;
+            }
+        }
+
+        function clearGameState(levelNum, stageNum) {
+            try {
+                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
+                if (!currentStudent) return;
+
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                if (!students[currentStudent.nom]) return;
+
+                const student = students[currentStudent.nom];
+                
+                if (student.resultatsParJeu?.train?.gameStates) {
+                    const gameStateKey = `niveau${levelNum}_stage${stageNum}`;
+                    delete student.resultatsParJeu.train.gameStates[gameStateKey];
+                    localStorage.setItem('alphabet_students', JSON.stringify(students));
+                }
+                
+            } catch (error) {
+                console.log('Erreur suppression état de jeu:', error);
+            }
         }
 
         function showLevelSelector() {
@@ -661,15 +714,19 @@
             currentLevel = { num: levelNum, ...LEVELS[levelNum] };
             const progressKey = `niveau${levelNum}`;
             
-            // Charger la progression actuelle du niveau
+            // Toujours commencer à l'étape enregistrée dans la progression
             currentStage = studentProgress[progressKey].currentStage || 0;
             
-            // Vérifier s'il y a une partie en cours à restaurer pour ce niveau et cette étape
-            if (gameState && gameState.level === levelNum && gameState.stage === currentStage) {
+            console.log(`Niveau ${levelNum}, étape ${currentStage + 1}/${currentLevel.stages.length}`);
+            
+            // Charger l'état du jeu sauvegardé pour cette étape
+            const savedGameState = loadGameState(levelNum, currentStage);
+            
+            if (savedGameState && savedGameState.level === levelNum && savedGameState.stage === currentStage) {
                 console.log('Restauration de la partie en cours');
-                restoreGameState();
+                restoreGameState(savedGameState);
             } else {
-                console.log('Nouvelle partie');
+                console.log('Nouvelle étape');
                 setupNewGame();
             }
             
@@ -692,7 +749,7 @@
             saveProgress();
         }
 
-        function restoreGameState() {
+        function restoreGameState(gameState) {
             if (!gameState) {
                 setupNewGame();
                 return;
@@ -724,22 +781,38 @@
                 }
             });
             
-            // Recréer le pool de lettres
-            createLettersPool();
+            // Recréer le pool de lettres initial
+            const allLettersForSlots = emptySlots.map(i => ALPHABET[i]);
+            const placedLetters = filledSlots.map(i => ALPHABET[i]);
+            const availableLetters = gameState.availableLetters || allLettersForSlots.filter(letter => !placedLetters.includes(letter));
             
-            // Marquer comme utilisées les lettres déjà placées
-            const allPlacedLetters = filledSlots.map(i => ALPHABET[i]);
-            document.querySelectorAll('.letter-item').forEach(item => {
-                const letter = item.dataset.letter;
-                if (allPlacedLetters.includes(letter)) {
-                    item.classList.add('used');
+            createLettersPoolFromArray(availableLetters);
+            
+            // Sélectionner la lettre si elle était sélectionnée
+            if (selectedLetter) {
+                const letterElement = document.querySelector(`.letter-item[data-letter="${selectedLetter}"]:not(.used)`);
+                if (letterElement) {
+                    letterElement.classList.add('selected');
                 }
-                if (selectedLetter && letter === selectedLetter) {
-                    item.classList.add('selected');
-                }
-            });
+            }
             
             console.log('Partie restaurée:', { filledSlots, selectedLetter });
+        }
+
+        function createLettersPoolFromArray(lettersArray) {
+            const pool = document.getElementById('lettersPool');
+            pool.innerHTML = '';
+
+            const shuffled = shuffleArray([...lettersArray]);
+
+            shuffled.forEach(letter => {
+                const letterDiv = document.createElement('div');
+                letterDiv.className = `letter-item letter-${currentLevel.writing}`;
+                letterDiv.textContent = getDisplayLetter(letter);
+                letterDiv.dataset.letter = letter;
+                letterDiv.onclick = () => selectLetter(letter, letterDiv);
+                pool.appendChild(letterDiv);
+            });
         }
 
         function selectRandomSlots(count) {
@@ -809,6 +882,14 @@
             });
         }
 
+        function getFilledSlots() {
+            const filled = [];
+            document.querySelectorAll('.wagon.filled').forEach(wagon => {
+                filled.push(parseInt(wagon.dataset.index));
+            });
+            return filled;
+        }
+
         function shuffleArray(array) {
             const newArray = [...array];
             for (let i = newArray.length - 1; i > 0; i--) {
@@ -819,6 +900,8 @@
         }
 
         function getDisplayLetter(letter) {
+            if (!currentLevel) return letter;
+            
             switch(currentLevel.writing) {
                 case 'majuscule': return letter.toUpperCase();
                 case 'script': return letter.toLowerCase();
@@ -895,11 +978,11 @@
             const currentProgress = studentProgress[progressKey];
             
             // Avancer à l'étape suivante
-            currentProgress.currentStage = currentStage + 1;
+            currentProgress.currentStage++;
             
             // Vérifier si le niveau est terminé (toutes les 3 étapes)
             if (currentProgress.currentStage >= currentLevel.stages.length) {
-                // Niveau terminé : réinitialiser la progression
+                // Niveau terminé : réinitialiser la progression à l'étape 0
                 currentProgress.currentStage = 0;
                 currentProgress.completed = true;
                 
@@ -912,13 +995,19 @@
                     }
                 }
                 
-                // Effacer la sauvegarde de la partie en cours
-                gameState = null;
+                // Effacer tous les états de jeu pour ce niveau
+                for (let i = 0; i < currentLevel.stages.length; i++) {
+                    clearGameState(currentLevel.num, i);
+                }
+                
+                // Sauvegarder la progression du niveau terminé
                 saveProgress();
                 showTransition(true);
             } else {
-                // Étape suivante : effacer l'état du jeu pour la nouvelle étape
-                gameState = null;
+                // Étape suivante : effacer l'état de l'étape actuelle
+                clearGameState(currentLevel.num, currentStage);
+                
+                // Sauvegarder la progression (étape suivante)
                 saveProgress();
                 showTransition(false);
             }
@@ -983,7 +1072,7 @@
             // Sauvegarder l'état actuel avant de quitter
             saveProgress();
             
-            // Réinitialiser les variables de jeu mais garder gameState
+            // Réinitialiser les variables de jeu
             currentLevel = null;
             currentStage = 0;
             selectedLetter = null;
@@ -1000,3 +1089,7 @@
     </script>
 </body>
 </html>
+
+    
+
+    
