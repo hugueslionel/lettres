@@ -456,7 +456,7 @@
     </div>
 
     <script>
-        // Configuration
+        // Configuration - TOUJOURS 26 lettres
         const ALPHABET = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
                           'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
 
@@ -524,21 +524,29 @@
         }
         
         function getDisorderProgress() {
-            const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
-            const currentStudentName = getCurrentStudentName();
-            
-            if (currentStudentName && students[currentStudentName]) {
-                const disorderStats = students[currentStudentName].resultatsParJeu.disorder || {};
+            try {
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const currentStudentName = getCurrentStudentName();
+                
+                if (currentStudentName && students[currentStudentName]) {
+                    const disorderStats = students[currentStudentName].resultatsParJeu?.disorder || {};
+                    return {
+                        level1Completed: disorderStats.level1Completed || false,
+                        level2Completed: disorderStats.level2Completed || false
+                    };
+                }
+                
                 return {
-                    level1Completed: disorderStats.level1Completed || false,
-                    level2Completed: disorderStats.level2Completed || false
+                    level1Completed: false,
+                    level2Completed: false
+                };
+            } catch (error) {
+                console.log('Erreur lors de la récupération de la progression:', error);
+                return {
+                    level1Completed: false,
+                    level2Completed: false
                 };
             }
-            
-            return {
-                level1Completed: false,
-                level2Completed: false
-            };
         }
 
         function startLevel(level) {
@@ -714,55 +722,83 @@
             }
         }
 
-        
         function endGame() {
             saveGameStats();
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('gameOver').style.display = 'block';
             
-            // Retourner automatiquement à la sélection des niveaux après 3 secondes
+            // Retourner automatiquement à la sélection des niveaux après 5 secondes
             setTimeout(() => {
                 showLevelSelector();
-            }, 3000);
+            }, 5000);
         }
+        
         function saveGameStats() {
             try {
                 const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
                 const currentStudentName = getCurrentStudentName();
-                
+        
                 if (currentStudentName && students[currentStudentName]) {
                     const student = students[currentStudentName];
-                    
+            
+                    // S'assurer que statistiques existe
+                    if (!student.statistiques) {
+                        student.statistiques = { sessionsJouees: 0, lettresTravaillees: [] };
+                    }
                     student.statistiques.sessionsJouees++;
+                    
+                    // Ajouter les lettres travaillées
+                    if (!student.statistiques.lettresTravaillees) {
+                        student.statistiques.lettresTravaillees = [];
+                    }
                     student.statistiques.lettresTravaillees = [
                         ...new Set([...student.statistiques.lettresTravaillees, ...ALPHABET])
                     ];
-                    
+            
+                    // S'assurer que resultatsParJeu existe
+                    if (!student.resultatsParJeu) {
+                        student.resultatsParJeu = {};
+                    }
                     if (!student.resultatsParJeu.disorder) {
                         student.resultatsParJeu.disorder = {
                             partiesJouees: 0,
-                            niveauxReussis: {},
+                            meilleurScore: 0,
+                            tempsRecord: null,
                             level1Completed: false,
-                            level2Completed: false
+                            level2Completed: false,
+                            level3Completed: false,
+                            level1Progress: { placedLetters: [] },
+                            level2Progress: { placedLetters: [] },
+                            level3Progress: { placedLetters: [] }
                         };
                     }
-                    
+            
                     const disorderStats = student.resultatsParJeu.disorder;
                     disorderStats.partiesJouees++;
-                    disorderStats.niveauxReussis[currentLevel.name] = 
-                        (disorderStats.niveauxReussis[currentLevel.name] || 0) + 1;
                     
                     // Marquer le niveau comme complété
                     if (currentLevelNumber === 1) {
                         disorderStats.level1Completed = true;
+                        // Réinitialiser la progression
+                        disorderStats.level1Progress = { placedLetters: [] };
                     } else if (currentLevelNumber === 2) {
                         disorderStats.level2Completed = true;
+                        // Réinitialiser la progression
+                        disorderStats.level2Progress = { placedLetters: [] };
+                    } else if (currentLevelNumber === 3) {
+                        disorderStats.level3Completed = true;
+                        // Réinitialiser la progression
+                        disorderStats.level3Progress = { placedLetters: [] };
                     }
-                    
+            
                     localStorage.setItem('alphabet_students', JSON.stringify(students));
+                    console.log('Statistiques sauvegardées pour le niveau', currentLevelNumber);
+            
+                    // Mettre à jour les boutons de niveau
+                    updateLevelButtons();
                 }
             } catch (error) {
-                console.log('Erreur lors de la sauvegarde:', error);
+                console.log('Erreur lors de la sauvegarde des stats:', error);
             }
         }
 
