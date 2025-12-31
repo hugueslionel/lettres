@@ -529,7 +529,26 @@
                 const currentStudentName = getCurrentStudentName();
                 
                 if (currentStudentName && students[currentStudentName]) {
-                    const disorderStats = students[currentStudentName].resultatsParJeu?.disorder || {};
+                    // S'assurer que la structure existe
+                    if (!students[currentStudentName].resultatsParJeu) {
+                        students[currentStudentName].resultatsParJeu = {};
+                    }
+                    if (!students[currentStudentName].resultatsParJeu.disorder) {
+                        students[currentStudentName].resultatsParJeu.disorder = {
+                            partiesJouees: 0,
+                            meilleurScore: 0,
+                            tempsRecord: null,
+                            level1Completed: false,
+                            level2Completed: false,
+                            level3Completed: false,
+                            level1Progress: { placedLetters: [] },
+                            level2Progress: { placedLetters: [] },
+                            level3Progress: { placedLetters: [] }
+                        };
+                        localStorage.setItem('alphabet_students', JSON.stringify(students));
+                    }
+                    
+                    const disorderStats = students[currentStudentName].resultatsParJeu.disorder;
                     return {
                         level1Completed: disorderStats.level1Completed || false,
                         level2Completed: disorderStats.level2Completed || false
@@ -555,18 +574,56 @@
             
             currentLevelNumber = level;
 
-            setupGame();
+            // Charger la progression sauvegardée pour ce niveau
+            loadLevelProgress();
             
             document.getElementById('levelSelector').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
             document.getElementById('gameOver').style.display = 'none';
         }
 
-        function setupGame() {
-            placedLetters = [];
+        function loadLevelProgress() {
+            try {
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const currentStudentName = getCurrentStudentName();
+                
+                if (currentStudentName && students[currentStudentName] && 
+                    students[currentStudentName].resultatsParJeu &&
+                    students[currentStudentName].resultatsParJeu.disorder) {
+                    
+                    const disorderStats = students[currentStudentName].resultatsParJeu.disorder;
+                    const levelProgress = disorderStats[`level${currentLevelNumber}Progress`] || { placedLetters: [] };
+                    
+                    placedLetters = levelProgress.placedLetters || [];
+                    
+                    // Si le niveau est marqué comme complété, on réinitialise
+                    const isCompleted = disorderStats[`level${currentLevelNumber}Completed`] || false;
+                    if (isCompleted) {
+                        placedLetters = [];
+                    }
+                } else {
+                    placedLetters = [];
+                }
+            } catch (error) {
+                console.log('Erreur lors du chargement de la progression:', error);
+                placedLetters = [];
+            }
+            
             selectedLetter = null;
             nextSlotIndex = 0;
+            
+            createAlphabetGrid();
+            createLettersPool();
+            updateScore();
+            
+            // Afficher les lettres déjà placées
+            restorePlacedLetters();
+        }
 
+        function setupGame() {
+            selectedLetter = null;
+            nextSlotIndex = 0;
+            
             createAlphabetGrid();
             createLettersPool();
             updateScore();
@@ -587,8 +644,27 @@
                 label.textContent = index + 1;
                 slot.appendChild(label);
 
+                // Vérifier si cette lettre est déjà placée
+                if (placedLetters[index]) {
+                    slot.innerHTML = `<span class="letter-${currentLevel.writing}">${getDisplayLetter(placedLetters[index])}</span>`;
+                    slot.classList.add('filled');
+                }
+
                 slot.onclick = () => placeLetterInSlot(index);
                 grid.appendChild(slot);
+            });
+        }
+
+        function restorePlacedLetters() {
+            // Masquer les lettres déjà placées dans le pool
+            placedLetters.forEach((letter, index) => {
+                if (letter) {
+                    const letterElement = document.querySelector(`.letter-item[data-letter="${letter}"]`);
+                    if (letterElement) {
+                        letterElement.style.opacity = '0.3';
+                        letterElement.style.pointerEvents = 'none';
+                    }
+                }
             });
         }
 
@@ -596,9 +672,8 @@
             const pool = document.getElementById('lettersPool');
             pool.innerHTML = '';
 
-            const shuffledAlphabet = shuffleArray([...ALPHABET]);
-
-            shuffledAlphabet.forEach(letter => {
+            // Créer toutes les lettres
+            ALPHABET.forEach(letter => {
                 const letterDiv = document.createElement('div');
                 letterDiv.className = `letter-item letter-${currentLevel.writing}`;
                 letterDiv.textContent = getDisplayLetter(letter);
@@ -606,15 +681,17 @@
                 letterDiv.onclick = () => selectLetter(letter, letterDiv);
                 pool.appendChild(letterDiv);
             });
+            
+            // Mélanger visuellement les lettres dans le pool
+            shuffleVisualLetters(pool);
         }
 
-        function shuffleArray(array) {
-            const newArray = [...array];
-            for (let i = newArray.length - 1; i > 0; i--) {
+        function shuffleVisualLetters(pool) {
+            const letters = Array.from(pool.children);
+            for (let i = letters.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                pool.appendChild(letters[j]);
             }
-            return newArray;
         }
 
         function getDisplayLetter(letter) {
@@ -631,6 +708,13 @@
         }
 
         function selectLetter(letter, element) {
+            // Vérifier si la lettre n'est pas déjà placée
+            const index = ALPHABET.indexOf(letter);
+            if (placedLetters[index]) {
+                playLetterSound(letter);
+                return;
+            }
+
             document.querySelectorAll('.letter-item').forEach(item => {
                 item.classList.remove('selected');
             });
@@ -643,6 +727,7 @@
         function placeLetterInSlot(slotIndex) {
             const slot = document.querySelector(`.alphabet-slot[data-index="${slotIndex}"]`);
             
+            // Si la lettre est déjà placée, jouer le son et retourner
             if (placedLetters[slotIndex]) {
                 playLetterSound(placedLetters[slotIndex]);
                 return;
@@ -675,9 +760,54 @@
                 });
 
                 updateScore();
+                
+                // SAUVEGARDER LA PROGRESSION APRÈS CHAQUE LETTRE PLACÉE
+                saveLetterProgress();
+                
                 checkWin();
             } else {
                 playWrongAnswerSound(correctLetter);
+            }
+        }
+
+        function saveLetterProgress() {
+            try {
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const currentStudentName = getCurrentStudentName();
+        
+                if (currentStudentName && students[currentStudentName]) {
+                    const student = students[currentStudentName];
+            
+                    // S'assurer que la structure existe
+                    if (!student.resultatsParJeu) {
+                        student.resultatsParJeu = {};
+                    }
+                    if (!student.resultatsParJeu.disorder) {
+                        student.resultatsParJeu.disorder = {
+                            partiesJouees: 0,
+                            meilleurScore: 0,
+                            tempsRecord: null,
+                            level1Completed: false,
+                            level2Completed: false,
+                            level3Completed: false,
+                            level1Progress: { placedLetters: [] },
+                            level2Progress: { placedLetters: [] },
+                            level3Progress: { placedLetters: [] }
+                        };
+                    }
+            
+                    const disorderStats = student.resultatsParJeu.disorder;
+                    
+                    // Sauvegarder les lettres placées pour ce niveau
+                    disorderStats[`level${currentLevelNumber}Progress`] = {
+                        placedLetters: placedLetters
+                    };
+            
+                    localStorage.setItem('alphabet_students', JSON.stringify(students));
+                    console.log('Progression sauvegardée pour le niveau', currentLevelNumber, ':', placedLetters.filter(l => l).length, 'lettres');
+                }
+            } catch (error) {
+                console.log('Erreur lors de la sauvegarde de progression:', error);
             }
         }
 
@@ -792,7 +922,7 @@
                     }
             
                     localStorage.setItem('alphabet_students', JSON.stringify(students));
-                    console.log('Statistiques sauvegardées pour le niveau', currentLevelNumber);
+                    console.log('Niveau', currentLevelNumber, 'marqué comme complété et progression réinitialisée');
             
                     // Mettre à jour les boutons de niveau
                     updateLevelButtons();
@@ -813,7 +943,17 @@
         }
 
         function resetGame() {
-            setupGame();
+            // Réinitialiser la progression pour cette session
+            placedLetters = [];
+            selectedLetter = null;
+            nextSlotIndex = 0;
+            
+            createAlphabetGrid();
+            createLettersPool();
+            updateScore();
+            
+            // Sauvegarder la réinitialisation
+            saveLetterProgress();
         }
 
         function restartGame() {
