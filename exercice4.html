@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chemin des Lettres</title>
     <style>
+        /* [Le CSS reste inchangé] */
         @font-face {
             font-family: 'BelleAllureGS';
             src: url('fonts/BelleAllureGS-Gros.otf') format('opentype');
@@ -364,14 +365,73 @@
         let correctPath = [];
         let selectedCells = [];
         let startTime = null;
+        let studentProgress = null;
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
+            loadProgress();
             initGame();
         });
 
+        function loadProgress() {
+            try {
+                const currentStudent = getCurrentStudent();
+                if (!currentStudent) return;
+
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const student = students[currentStudent.nom];
+                
+                if (!student) return;
+                
+                // Initialiser la progression pour ce jeu si elle n'existe pas
+                if (!student.resultatsParJeu.chemin) {
+                    student.resultatsParJeu.chemin = {
+                        currentStep: 0,
+                        completed: false
+                    };
+                    localStorage.setItem('alphabet_students', JSON.stringify(students));
+                }
+                
+                studentProgress = student.resultatsParJeu.chemin;
+                
+                // Charger la progression
+                if (studentProgress.currentStep < LETTERS_CONFIG.length) {
+                    currentStepIndex = studentProgress.currentStep;
+                }
+                
+            } catch (error) {
+                console.log('Erreur chargement progression:', error);
+                studentProgress = { currentStep: 0, completed: false };
+            }
+        }
+
+        function saveProgress() {
+            try {
+                const currentStudent = getCurrentStudent();
+                if (!currentStudent || !studentProgress) return;
+
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const student = students[currentStudent.nom];
+                
+                if (!student) return;
+                
+                // Mettre à jour la progression
+                student.resultatsParJeu.chemin = {
+                    currentStep: currentStepIndex,
+                    completed: currentStepIndex >= LETTERS_CONFIG.length
+                };
+                
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+                studentProgress = student.resultatsParJeu.chemin;
+                
+                console.log('Progression sauvegardée:', studentProgress);
+                
+            } catch (error) {
+                console.log('Erreur sauvegarde progression:', error);
+            }
+        }
+
         function initGame() {
-            currentStepIndex = 0;
             startTime = Date.now();
             loadStep();
         }
@@ -391,7 +451,6 @@
             renderGrid();
         }
 
-        
         function generateGrid(targetLetter) {
             grid = [];
             correctPath = [];
@@ -432,7 +491,7 @@
                 }
             }
         }
-        
+
         function generateRandomPath() {
             // Générer un chemin de (0,0) à (8,8)
             const path = [];
@@ -543,11 +602,15 @@
             selectedCells = selectedCells.filter(index => correctIndices.includes(index));
 
             if (allCorrect && selectedCells.length === correctIndices.length) {
-                // Toutes les cases sont correctes
+                // Toutes les cases sont correctes - étape terminée
                 setTimeout(() => {
                     showFeedback('Bravo ! 🌟', 'success');
                     setTimeout(() => {
+                        // Sauvegarder la progression
                         currentStepIndex++;
+                        saveProgress();
+                        
+                        // Passer à l'étape suivante
                         loadStep();
                     }, 1500);
                 }, 500);
@@ -580,13 +643,42 @@
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
             saveGameStats(elapsed);
             
+            // Marquer le jeu comme terminé et réinitialiser la progression
+            resetProgress();
+            
             document.getElementById('overlay').classList.add('active');
             document.getElementById('gameOver').style.display = 'block';
 
-            // ⬇️ AJOUT ICI : Retourner automatiquement à la sélection des niveaux après 3 secondes
+            // Retourner automatiquement à la sélection des niveaux après 3 secondes
             setTimeout(() => {
                 goHome();
             }, 3000);
+        }
+
+        function resetProgress() {
+            try {
+                const currentStudent = getCurrentStudent();
+                if (!currentStudent) return;
+
+                const students = JSON.parse(localStorage.getItem('alphabet_students') || '{}');
+                const student = students[currentStudent.nom];
+                
+                if (!student) return;
+                
+                // Réinitialiser la progression à zéro
+                student.resultatsParJeu.chemin = {
+                    currentStep: 0,
+                    completed: false
+                };
+                
+                localStorage.setItem('alphabet_students', JSON.stringify(students));
+                studentProgress = student.resultatsParJeu.chemin;
+                
+                console.log('Progression réinitialisée');
+                
+            } catch (error) {
+                console.log('Erreur réinitialisation progression:', error);
+            }
         }
 
         function saveGameStats(timeElapsed) {
@@ -595,6 +687,19 @@
             
             if (currentStudentName && students[currentStudentName]) {
                 const student = students[currentStudentName];
+                
+                // Initialiser les statistiques si elles n'existent pas
+                if (!student.statistiques) {
+                    student.statistiques = {
+                        tempsTotal: 0,
+                        sessionsJouees: 0,
+                        lettresTravaillees: []
+                    };
+                }
+                
+                if (!student.resultatsParJeu) {
+                    student.resultatsParJeu = {};
+                }
                 
                 student.statistiques.tempsTotal += timeElapsed;
                 student.statistiques.sessionsJouees++;
@@ -619,19 +724,29 @@
             }
         }
 
-        function getCurrentStudentName() {
+        function getCurrentStudent() {
             try {
-                const currentStudent = JSON.parse(sessionStorage.getItem('currentStudent'));
-                return currentStudent ? currentStudent.nom : null;
+                return JSON.parse(sessionStorage.getItem('currentStudent'));
             } catch (error) {
                 console.log('Erreur lors de la récupération de l\'élève:', error);
                 return null;
             }
         }
 
+        function getCurrentStudentName() {
+            const student = getCurrentStudent();
+            return student ? student.nom : null;
+        }
+
         function restartGame() {
+            // Réinitialiser la progression avant de recommencer
+            resetProgress();
+            
             document.getElementById('overlay').classList.remove('active');
             document.getElementById('gameOver').style.display = 'none';
+            
+            // Recharger la progression et redémarrer
+            loadProgress();
             initGame();
         }
 
